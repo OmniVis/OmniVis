@@ -8,6 +8,7 @@ variables:
   VM_IP: "10.1.101.43"
   VM_USER: "root"
   DEPLOY_DIR: "/opt/graphi"
+  SSH_OPTS: "-i /tmp/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -o GSSAPIAuthentication=no -o PreferredAuthentications=publickey"
 
 build-graphi-image:
   stage: build
@@ -35,11 +36,11 @@ deploy-graphi:
     - ssh-keyscan -H $VM_IP >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
   script:
-    - ssh -i /tmp/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=no $VM_USER@$VM_IP "mkdir -p $DEPLOY_DIR"
-    - rsync -avz -e "ssh -i /tmp/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=no" docker-compose.yml $VM_USER@$VM_IP:$DEPLOY_DIR/
-    - ssh -i /tmp/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=no $VM_USER@$VM_IP "cd $DEPLOY_DIR && podman login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY"
-    - ssh -i /tmp/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=no $VM_USER@$VM_IP "cd $DEPLOY_DIR && podman-compose pull"
-    - ssh -i /tmp/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=no $VM_USER@$VM_IP "cd $DEPLOY_DIR && podman-compose up -d"
+    - ssh $SSH_OPTS $VM_USER@$VM_IP "mkdir -p $DEPLOY_DIR"
+    - rsync -avz -e "ssh $SSH_OPTS" docker-compose.yml $VM_USER@$VM_IP:$DEPLOY_DIR/
+    - ssh $SSH_OPTS $VM_USER@$VM_IP "cd $DEPLOY_DIR && podman login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY"
+    - ssh $SSH_OPTS $VM_USER@$VM_IP "cd $DEPLOY_DIR && podman-compose pull"
+    - ssh $SSH_OPTS $VM_USER@$VM_IP "cd $DEPLOY_DIR && podman-compose up -d"
   after_script:
     - rm -f /tmp/deploy_key
   only:
