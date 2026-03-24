@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Tools Hub | Adesso Group</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap');
+
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --accent-1: #00d2ff;
+            --accent-2: #3a7bd5;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Abstract Background Glow */
+        .bg-glow {
+            position: absolute;
+            width: 60vw;
+            height: 60vw;
+            background: radial-gradient(circle, var(--accent-2) 0%, transparent 60%);
+            top: -20vh;
+            left: -10vw;
+            opacity: 0.15;
+            filter: blur(80px);
+            z-index: 0;
+            animation: pulse-glow 8s ease-in-out infinite alternate;
+        }
+        .bg-glow-right {
+            position: absolute;
+            width: 40vw;
+            height: 40vw;
+            background: radial-gradient(circle, var(--accent-1) 0%, transparent 60%);
+            bottom: -10vh;
+            right: -5vw;
+            opacity: 0.1;
+            filter: blur(100px);
+            z-index: 0;
+            animation: pulse-glow 10s ease-in-out infinite alternate-reverse;
+        }
+
+        @keyframes pulse-glow {
+            0% { transform: scale(1) translate(0, 0); }
+            100% { transform: scale(1.1) translate(20px, 10px); }
+        }
+
+        header {
+            padding: 2rem 4rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .logo {
+            font-weight: 800;
+            font-size: 1.5rem;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, var(--text-primary), var(--text-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1rem;
+            z-index: 10;
+        }
+
+        .hero-text {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .hero-text h1 {
+            font-size: 4rem;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 1rem;
+        }
+
+        .hero-text h1 span {
+            background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-text p {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+            font-weight: 300;
+        }
+
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2rem;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .tool-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 2.5rem;
+            text-decoration: none;
+            color: inherit;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        .tool-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.05), transparent);
+            transform: skewX(-20deg);
+            transition: 0.6s;
+        }
+
+        .tool-card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 40px rgba(0, 210, 255, 0.1);
+        }
+
+        .tool-card:hover::before {
+            left: 200%;
+        }
+
+        .tool-icon {
+            width: 60px;
+            height: 60px;
+            background: rgba(0, 210, 255, 0.1);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(0, 210, 255, 0.2);
+            color: var(--accent-1);
+        }
+
+        .tool-icon svg {
+            width: 30px;
+            height: 30px;
+        }
+
+        .tool-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+        }
+
+        .tool-desc {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+
+        .tool-link {
+            display: inline-flex;
+            align-items: center;
+            font-weight: 600;
+            color: var(--accent-1);
+            transition: gap 0.3s;
+            gap: 0.5rem;
+        }
+
+        .tool-card:hover .tool-link {
+            gap: 0.75rem;
+        }
+
+        /* Coming soon placeholder */
+        .tool-card.locked {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        .tool-card.locked .tool-icon {
+            background: rgba(148, 163, 184, 0.1);
+            border-color: rgba(148, 163, 184, 0.2);
+            color: var(--text-secondary);
+        }
+
+    </style>
+</head>
+<body>
+    <div class="bg-glow"></div>
+    <div class="bg-glow-right"></div>
+
+    <header>
+        <div class="logo">AI Tools Hub</div>
+    </header>
+
+    <main>
+        <div class="hero-text">
+            <h1>Discover & Build<br><span>Next-Gen Tools</span></h1>
+            <p>Your central workstation for internal utilities, visualization editors, and AI-accelerated frameworks at Adesso Group.</p>
+        </div>
+
+        <div class="tools-grid">
+            <!-- Graphi Card -->
+            <a href="/graphi/" class="tool-card">
+                <div class="tool-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                </div>
+                <h2 class="tool-title">GraphiTeam Editor</h2>
+                <p class="tool-desc">An interactive, real-time Mermaid architecture and diagram builder. Local storage, seamless syncing, zero-hassle.</p>
+                <div class="tool-link">Launch Editor &rarr;</div>
+            </a>
+
+            <!-- Placeholder for future tools -->
+            <div class="tool-card locked">
+                <div class="tool-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                </div>
+                <h2 class="tool-title">AI Content Engine</h2>
+                <p class="tool-desc">Automated generation utilities blending language models with corporate knowledge bases.</p>
+                <div class="tool-link">Coming Soon</div>
+            </div>
+
+            <!-- Placeholder 2 -->
+             <div class="tool-card locked">
+                <div class="tool-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                </div>
+                <h2 class="tool-title">API Dashboard</h2>
+                <p class="tool-desc">Central hub to monitor and analyze traffic across all CC API Management microservices.</p>
+                <div class="tool-link">Coming Soon</div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

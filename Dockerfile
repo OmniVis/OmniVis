@@ -1,34 +1,31 @@
-FROM docker.io/library/node:22.15.0-alpine3.21 AS mermaid-live-editor-dependencies
-
-RUN apk --no-cache add build-base git python3 && \
-    rm -rf /var/cache/apk/*
-
-RUN corepack enable pnpm
+FROM node:20.19.0-alpine AS builder
 
 WORKDIR /app
 
-COPY ./package.json .
-COPY ./pnpm-lock.yaml .
+# Enable pnpm
+RUN corepack enable pnpm
 
+# Install dependencies
+COPY package.json pnpm-lock.yaml* ./
 RUN pnpm install
 
-FROM mermaid-live-editor-dependencies AS mermaid-live-editor-builder
+# Copy application files
+COPY . .
 
-ARG MERMAID_RENDERER_URL
-ARG MERMAID_KROKI_RENDERER_URL
-ARG MERMAID_ANALYTICS_URL
-ARG MERMAID_DOMAIN
-ARG MERMAID_IS_ENABLED_MERMAID_CHART_LINKS
+# Set environment variable to make SvelteKit attach URLs correctly for the proxy
+ARG BASE_PATH=/graphi
+ENV BASE_PATH=${BASE_PATH}
 
-COPY . ./
-
+# Build the application
 RUN pnpm build
 
-FROM mermaid-live-editor-builder AS mermaid-dev
+FROM nginx:alpine
+# Remove default nginx static assets
+RUN rm -rf /usr/share/nginx/html/*
 
-ENTRYPOINT ["pnpm", "dev"]
+# Copy the built site into the subdirectory corresponding to the BASE_PATH
+# This ensures that assets are resolved correctly when requested via /graphi/
+COPY --from=builder /app/docs /usr/share/nginx/html/graphi
 
-FROM nginx:1.28-alpine3.21 AS mermaid
-
-COPY ./nginx.conf /etc/nginx/conf.d/default.conf
-COPY --from=mermaid-live-editor-builder /app/docs /usr/share/nginx/html
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
