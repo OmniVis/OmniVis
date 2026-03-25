@@ -1,5 +1,6 @@
 stages:
-  - build
+  - build-app
+  - build-image
   - deploy
 
 variables:
@@ -8,21 +9,52 @@ variables:
   DOCKER_BUILDKIT: "1"
   DEPLOY_DIR: "/opt/graphi"
 
-build-graphi-image:
-  stage: build
+# Stage 1: compile the SvelteKit SPA in a Node container.
+# Runs separately from Docker so we can apply NODE_OPTIONS to beat OOM
+# and use GitLab's cache to avoid re-downloading pnpm packages each time.
+build-app:
+  stage: build-app
+  image: node:20-slim
+  variables:
+    BASE_PATH: "/graphi"
+  before_script:
+    - corepack enable pnpm
+    - pnpm config set store-dir .pnpm-store
+  script:
+    - pnpm install --frozen-lockfile --ignore-scripts
+    - NODE_OPTIONS="--max-old-space-size=4096" pnpm build
+  cache:
+    key:
+      files:
+        - pnpm-lock.yaml
+    paths:
+      - .pnpm-store/
+  artifacts:
+    paths:
+      - docs/
+    expire_in: 1 hour
+  only:
+    - main
+    - master
+
+# Stage 2: pack the pre-built artifacts into an nginx image and push it.
+# The Dockerfile is now a simple single-stage copy — no Node needed here.
+build-image:
+  stage: build-image
   image: docker:24.0.5
   services:
     - docker:24.0.5-dind
   before_script:
     - echo "$CI_REGISTRY_PASSWORD" | docker login $CI_REGISTRY -u "$CI_REGISTRY_USER" --password-stdin
   script:
-    - docker build --build-arg BASE_PATH=/graphi -t "$CI_REGISTRY_IMAGE:latest" .
+    - docker build -t "$CI_REGISTRY_IMAGE:latest" .
     - docker push "$CI_REGISTRY_IMAGE:latest"
   only:
     - main
     - master
 
-deploy-graphi:
+# Stage 3: pull the new image on the VM and restart the containers.
+deploy:
   stage: deploy
   image: alpine:latest
   before_script:
