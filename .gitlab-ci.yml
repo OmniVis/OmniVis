@@ -34,16 +34,14 @@ deploy-graphi:
     - SSH_OPTS="-o StrictHostKeyChecking=no"
     - SSHPASS_CMD="sshpass -e ssh $SSH_OPTS"
   script:
-    # $SSH_USER ist eine GitLab-CI-Variable und wird lokal expandiert,
-    # sodass die VM "sudo chown deployuser:deployuser /opt/graphi" erhält.
-    - $SSHPASS_CMD $SSH_USER@10.1.101.43 "sudo mkdir -p $DEPLOY_DIR && sudo chown $SSH_USER: $DEPLOY_DIR && sudo chmod 755 $DEPLOY_DIR"
-    - rsync -avz -e "sshpass -e ssh $SSH_OPTS" docker-compose.yml $SSH_USER@10.1.101.43:$DEPLOY_DIR/
-    - $SSHPASS_CMD $SSH_USER@10.1.101.43 "sudo podman login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY"
-    - $SSHPASS_CMD $SSH_USER@10.1.101.43 "cd $DEPLOY_DIR && sudo podman-compose pull"
-    - $SSHPASS_CMD $SSH_USER@10.1.101.43 "cd $DEPLOY_DIR && sudo podman-compose up -d --remove-orphans"
+    # Fix: Befehle in '...' eingeschlossen, um YAML-Parsing-Fehler mit dem Doppelpunkt zu vermeiden
+    - '$SSHPASS_CMD $SSH_USER@10.1.101.43 "sudo mkdir -p $DEPLOY_DIR && sudo chown $SSH_USER: $DEPLOY_DIR && sudo chmod 755 $DEPLOY_DIR"'
+    - 'rsync -avz -e "sshpass -e ssh $SSH_OPTS" docker-compose.yml $SSH_USER@10.1.101.43:$DEPLOY_DIR/'
+    - '$SSHPASS_CMD $SSH_USER@10.1.101.43 "sudo podman login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY"'
+    - '$SSHPASS_CMD $SSH_USER@10.1.101.43 "cd $DEPLOY_DIR && sudo podman-compose pull"'
+    - '$SSHPASS_CMD $SSH_USER@10.1.101.43 "cd $DEPLOY_DIR && sudo podman-compose up -d --remove-orphans"'
   after_script:
     - echo "Deployment session finished"
   only:
     - main
     - master
-
