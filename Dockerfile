@@ -31,5 +31,11 @@ RUN rm -rf /usr/share/nginx/html/*
 # This ensures that assets are resolved correctly when requested via /graphi/
 COPY --from=builder /app/docs /usr/share/nginx/html/graphi
 
+# Replace default nginx vhost with SPA-aware config:
+# - try_files serves static assets directly, falls back to 404.html for SPA routes
+# - Prevents nginx's own 404 HTML being returned for client-side routes (which
+#   would cause MIME-type errors when the browser treats the HTML as JavaScript)
+COPY nginx/default.conf /etc/nginx/conf.d/default.conf
+
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
