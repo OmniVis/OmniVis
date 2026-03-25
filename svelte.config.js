@@ -11,7 +11,7 @@ const config = {
       '$/*': './src/lib/*'
     },
     adapter: adapter({
-      pages: 'docs',
+      pages: 'target',
       fallback: '404.html'
     }),
     paths: {

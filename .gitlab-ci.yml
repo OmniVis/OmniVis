@@ -31,7 +31,7 @@ build-app:
       - .pnpm-store/
   artifacts:
     paths:
-      - docs/
+      - target/
     expire_in: 1 hour
   only:
     - main
