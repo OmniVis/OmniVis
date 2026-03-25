@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  graphi:
+    image: registry.gitlab.adesso-group.com/cdfec176/competence-centers/cc_api_management/aitools/graphi:latest
+    container_name: tools-graphi
+    restart: always
+    networks:
+      - aitools_net
+
+networks:
+  aitools_net:
+    external: true

@@ -1,0 +1,46 @@
+stages:
+  - build
+  - deploy
+
+variables:
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: ""
+  DEPLOY_DIR: "/opt/graphi"
+
+build-graphi-image:
+  stage: build
+  image: docker:24.0.5
+  services:
+    - docker:24.0.5-dind
+  before_script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login $CI_REGISTRY -u "$CI_REGISTRY_USER" --password-stdin
+  script:
+    - docker build --build-arg BASE_PATH=/graphi -t "$CI_REGISTRY_IMAGE:latest" .
+    - docker push "$CI_REGISTRY_IMAGE:latest"
+  only:
+    - main
+    - master
+
+deploy-graphi:
+  stage: deploy
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache openssh-client sshpass rsync
+    - mkdir -p ~/.ssh && chmod 700 ~/.ssh
+    - ssh-keyscan -H 10.1.101.43 >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+    - export SSHPASS="$SSH_PASSWORD"
+    - SSH_OPTS="-o StrictHostKeyChecking=no"
+    - SSHPASS_CMD="sshpass -e ssh $SSH_OPTS"
+  script:
+    - $SSHPASS_CMD $SSH_USER@10.1.101.43 "sudo mkdir -p $DEPLOY_DIR"
+    - rsync -avz -e "sshpass -e ssh $SSH_OPTS" docker-compose.yml $SSH_USER@10.1.101.43:$DEPLOY_DIR/
+    - $SSHPASS_CMD $SSH_USER@10.1.101.43 "cd $DEPLOY_DIR && sudo podman login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY"
+    - $SSHPASS_CMD $SSH_USER@10.1.101.43 "cd $DEPLOY_DIR && sudo podman-compose pull"
+    - $SSHPASS_CMD $SSH_USER@10.1.101.43 "cd $DEPLOY_DIR && sudo podman-compose up -d"
+  after_script:
+    - echo "Deployment session finished"
+  only:
+    - main
+    - master
+

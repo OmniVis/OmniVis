@@ -1,0 +1,7 @@
+name = "graphi-cms-oauth"
+main = "src/index.js"
+compatibility_date = "2023-10-30"
+
+# Note: You will need to set these secrets via Wrangler:
+# wrangler secret put GITHUB_CLIENT_ID
+# wrangler secret put GITHUB_CLIENT_SECRET

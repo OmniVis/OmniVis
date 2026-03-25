@@ -1,0 +1,490 @@
+<!doctype html>
+<html lang="de" class="dark" id="html-root">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mockup - Editor Page</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              background: 'hsl(var(--background))',
+              foreground: 'hsl(var(--foreground))',
+              card: 'hsl(var(--card))',
+              'card-foreground': 'hsl(var(--card-foreground))',
+              popover: 'hsl(var(--popover))',
+              'popover-foreground': 'hsl(var(--popover-foreground))',
+              primary: 'hsl(var(--primary))',
+              'primary-foreground': 'hsl(var(--primary-foreground))',
+              secondary: 'hsl(var(--secondary))',
+              'secondary-foreground': 'hsl(var(--secondary-foreground))',
+              muted: 'hsl(var(--muted))',
+              'muted-foreground': 'hsl(var(--muted-foreground))',
+              accent: 'hsl(var(--accent))',
+              'accent-foreground': 'hsl(var(--accent-foreground))',
+              destructive: 'hsl(var(--destructive))',
+              'destructive-foreground': 'hsl(var(--destructive-foreground))',
+              border: 'hsl(var(--border))',
+              input: 'hsl(var(--input))',
+              ring: 'hsl(var(--ring))'
+            }
+          }
+        }
+      };
+    </script>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Recursive:wght@300..1000&display=swap');
+
+      :root {
+        --background: 0 0% 100%;
+        --foreground: 222.2 84% 4.9%;
+        --card: 0 0% 100%;
+        --card-foreground: 222.2 84% 4.9%;
+        --popover: 0 0% 100%;
+        --popover-foreground: 222.2 84% 4.9%;
+        --primary: 226 58% 65%;
+        --primary-foreground: 0 0% 100%;
+        --secondary: 210 40% 96.1%;
+        --secondary-foreground: 222.2 47.4% 11.2%;
+        --muted: 228 24% 96%;
+        --muted-foreground: 215.4 16.3% 46.9%;
+        --accent: 226 58% 65%;
+        --accent-foreground: 0 0% 100%;
+        --destructive: 0 72% 51%;
+        --destructive-foreground: 210 40% 98%;
+        --border: 214 32% 91%;
+        --input: 214 32% 91%;
+        --ring: 222 84% 5%;
+        --radius: 0.75rem;
+      }
+
+      .dark {
+        --background: 223 9% 17%;
+        --foreground: 210 2% 87%;
+        --card: 223 9% 17%;
+        --card-foreground: 210 2% 87%;
+        --popover: 223 6% 20%;
+        --popover-foreground: 210 2% 87%;
+        --primary: 226 58% 65%;
+        --primary-foreground: 0 0% 100%;
+        --secondary: 223 6% 20%;
+        --secondary-foreground: 210 2% 87%;
+        --muted: 223 6% 20%;
+        --muted-foreground: 220 5% 47%;
+        --accent: 226 58% 65%;
+        --accent-foreground: 0 0% 100%;
+        --destructive: 226 58% 65%;
+        --destructive-foreground: 0 0% 100%;
+        --border: 220 7% 14%;
+        --input: 220 7% 14%;
+        --ring: 226 58% 65%;
+      }
+
+      .theme-transition {
+        transition:
+          background-color 0.3s ease,
+          color 0.3s ease,
+          border-color 0.3s ease;
+      }
+
+      body {
+        font-family: 'Recursive', sans-serif;
+        background-color: hsl(var(--background));
+        color: hsl(var(--foreground));
+      }
+
+      .glass {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .glow {
+        box-shadow:
+          0 0 20px rgba(114, 137, 218, 0.15),
+          0 0 60px rgba(114, 137, 218, 0.05);
+      }
+
+      .scrollbar-thin::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+
+      .scrollbar-thin::-webkit-scrollbar-track {
+        background: transparent;
+      }
+
+      .scrollbar-thin::-webkit-scrollbar-thumb {
+        background: hsl(var(--muted-foreground) / 0.3);
+        border-radius: 4px;
+      }
+
+      .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+        background: hsl(var(--muted-foreground) / 0.5);
+      }
+    </style>
+  </head>
+
+  <body
+    class="theme-transition flex h-screen w-full flex-col overflow-hidden bg-background font-sans text-foreground transition-colors">
+    <!-- Header -->
+    <header
+      class="theme-transition z-50 flex h-10 shrink-0 items-center justify-between border-b border-border bg-background px-4">
+      <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2">
+          <div
+            class="flex h-6 w-6 items-center justify-center rounded-md bg-primary text-xs font-bold text-white shadow-sm">
+            G
+          </div>
+          <span class="text-sm font-semibold tracking-tight">
+            Graphi
+            <span class="ml-1 text-xs font-normal italic opacity-50">/ Untitled Diagram</span>
+          </span>
+        </div>
+        <div class="mx-2 h-4 w-[1px] bg-border"></div>
+        <nav class="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+          <button class="rounded px-2 py-1 transition-colors hover:bg-muted">File</button>
+          <button class="rounded px-2 py-1 transition-colors hover:bg-muted">Edit</button>
+          <button class="rounded px-2 py-1 transition-colors hover:bg-muted">Help</button>
+        </nav>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <div class="flex items-center gap-1 rounded-md border border-border bg-muted/30 p-0.5">
+          <button
+            class="flex items-center gap-2 rounded-sm bg-primary px-3 py-1 text-xs font-bold text-white shadow-sm transition-all hover:opacity-90">
+            <i data-lucide="save" class="h-3.5 w-3.5"></i>
+            Save
+          </button>
+          <button
+            class="flex items-center gap-2 rounded-sm px-3 py-1 text-xs font-medium transition-all hover:bg-muted">
+            <i data-lucide="share" class="h-3.5 w-3.5 text-muted-foreground"></i>
+            Share
+          </button>
+        </div>
+        <button
+          class="rounded-full p-1.5 text-primary transition-all hover:bg-muted"
+          title="AI Assistant">
+          <i data-lucide="zap" class="h-5 w-5 fill-primary/20"></i>
+        </button>
+      </div>
+    </header>
+
+    <main class="flex flex-1 overflow-hidden">
+      <!-- Activity Bar -->
+      <aside
+        class="theme-transition z-40 flex w-12 shrink-0 flex-col items-center gap-4 border-r border-border bg-background py-4">
+        <button class="rounded-lg bg-primary/10 p-2 text-primary transition-all" title="Explorer">
+          <i data-lucide="folder" class="h-5 w-5"></i>
+        </button>
+        <button
+          class="rounded-lg p-2 text-muted-foreground transition-all hover:text-primary"
+          title="History">
+          <i data-lucide="clock" class="h-5 w-5"></i>
+        </button>
+        <button
+          class="rounded-lg p-2 text-muted-foreground transition-all hover:text-primary"
+          title="Templates">
+          <i data-lucide="layout-template" class="h-5 w-5"></i>
+        </button>
+        <button
+          class="rounded-lg p-2 text-muted-foreground transition-all hover:text-primary"
+          title="Themes">
+          <i data-lucide="palette" class="h-5 w-5"></i>
+        </button>
+
+        <div class="mt-auto flex flex-col gap-4">
+          <button
+            class="p-2 text-muted-foreground transition-all hover:text-primary"
+            title="Settings">
+            <i data-lucide="settings" class="h-5 w-5"></i>
+          </button>
+        </div>
+      </aside>
+
+      <!-- Sidebar -->
+      <aside class="theme-transition flex w-64 shrink-0 flex-col border-r border-border bg-card">
+        <div class="flex h-10 items-center justify-between border-b border-border px-4">
+          <span class="text-xs font-bold tracking-widest text-muted-foreground uppercase"
+            >Explorer</span
+          >
+          <button class="text-muted-foreground transition-all hover:text-primary">
+            <i data-lucide="chevron-left" class="h-4 w-4"></i>
+          </button>
+        </div>
+        <div class="flex-1 overflow-auto p-2">
+          <div class="space-y-4">
+            <section>
+              <h4
+                class="mb-2 px-2 text-[10px] font-bold tracking-tighter text-muted-foreground uppercase">
+                Cloud Workspace
+              </h4>
+              <div class="space-y-1">
+                <button
+                  class="group flex w-full items-center gap-2 rounded bg-primary/5 px-2 py-1.5 text-left text-sm text-primary transition-colors">
+                  <i data-lucide="file-code-2" class="h-3.5 w-3.5"></i>
+                  <span class="truncate">Untitled Diagram</span>
+                </button>
+              </div>
+            </section>
+            <section>
+              <h4
+                class="mb-2 px-2 text-[10px] font-bold tracking-tighter text-muted-foreground uppercase">
+                Local Storage
+              </h4>
+              <button
+                class="group flex w-full flex-col items-center justify-center rounded-lg border-2 border-dashed border-border p-6 text-muted-foreground transition-all hover:border-primary/50 hover:bg-primary/5">
+                <i
+                  data-lucide="folder-plus"
+                  class="mb-2 h-6 w-6 transition-colors group-hover:text-primary"></i>
+                <span class="text-xs font-medium">Link Folder</span>
+              </button>
+            </section>
+          </div>
+        </div>
+      </aside>
+
+      <div class="flex flex-1 overflow-hidden">
+        <!-- Code Editor Pane -->
+        <div class="theme-transition flex w-1/2 flex-col border-r border-border bg-background">
+          <div class="flex h-9 items-center border-b border-border bg-muted/20 px-1">
+            <button
+              class="flex h-full items-center gap-2 border-b-2 border-primary px-4 text-xs font-bold text-primary">
+              <i data-lucide="code" class="h-3.5 w-3.5"></i>
+              Code
+            </button>
+            <button
+              class="flex h-full items-center gap-2 px-4 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/40">
+              <i data-lucide="sliders" class="h-3.5 w-3.5"></i>
+              Config
+            </button>
+            <button
+              class="flex h-full items-center gap-2 px-4 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/40">
+              <i data-lucide="book-open" class="h-3.5 w-3.5"></i>
+              Learning
+            </button>
+            <div class="ml-auto flex items-center pr-2">
+              <button
+                class="rounded border border-accent/20 bg-accent/10 p-1 px-2 text-[10px] font-bold text-accent transition-all hover:bg-accent/20">
+                Doc
+              </button>
+            </div>
+          </div>
+
+          <div class="scrollbar-thin relative flex-1 overflow-auto p-4 font-mono text-sm">
+            <div class="flex gap-4 leading-relaxed">
+              <div class="pr-2 text-right font-mono text-muted-foreground/30 select-none">
+                1<br />2<br />3<br />4<br />5<br />6<br />7
+              </div>
+              <div class="flex-1 font-mono tracking-wide">
+                <span class="text-blue-400">flowchart</span> <span class="text-foreground">TD</span
+                ><br />
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-pink-400">Start</span> --&gt;
+                <span class="text-green-400">NodeA</span
+                ><span class="text-foreground/80">[Process A]</span><br />
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-green-400">NodeA</span> --&gt;
+                <span class="text-green-400">NodeB</span
+                ><span class="text-foreground/80">{Decision}</span><br />
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-green-400">NodeB</span>
+                <span class="text-blue-300">--|Yes|--&gt;</span>
+                <span class="text-green-400">End</span
+                ><span class="text-foreground/80">([Done/Finished])</span><br />
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-green-400">NodeB</span>
+                <span class="text-blue-300">--|No|--&gt;</span>
+                <span class="text-green-400">Retry</span
+                ><span class="text-foreground/80">[Repeat]</span><br />
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-green-400">Retry</span> --&gt;
+                <span class="text-green-400">NodeA</span>
+              </div>
+            </div>
+            <div class="absolute top-[20px] left-[56px] h-5 w-[2px] animate-pulse bg-primary"></div>
+          </div>
+        </div>
+
+        <!-- Preview Pane -->
+        <div
+          class="theme-transition relative flex flex-1 flex-col items-center justify-center overflow-hidden bg-muted/5 p-8">
+          <div class="relative flex h-full w-full items-center justify-center">
+            <div
+              class="glass glow rounded-2xl bg-background/50 p-8 shadow-2xl transition-all duration-500 hover:scale-[1.02]">
+              <svg
+                width="300"
+                height="250"
+                viewBox="0 0 300 250"
+                class="text-foreground transition-colors">
+                <rect
+                  x="110"
+                  y="10"
+                  width="80"
+                  height="40"
+                  rx="20"
+                  class="fill-primary/20 stroke-primary"
+                  stroke-width="2" />
+                <text
+                  x="150"
+                  y="35"
+                  text-anchor="middle"
+                  font-size="12"
+                  fill="currentColor"
+                  class="font-sans font-medium">
+                  Start
+                </text>
+
+                <line
+                  x1="150"
+                  y1="50"
+                  x2="150"
+                  y2="90"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  marker-end="url(#arrowhead)" />
+
+                <rect
+                  x="100"
+                  y="90"
+                  width="100"
+                  height="40"
+                  rx="4"
+                  fill="currentColor"
+                  fill-opacity="0.05"
+                  stroke="currentColor"
+                  stroke-width="2" />
+                <text
+                  x="150"
+                  y="115"
+                  text-anchor="middle"
+                  font-size="12"
+                  fill="currentColor"
+                  class="font-sans font-medium">
+                  Process A
+                </text>
+
+                <line
+                  x1="150"
+                  y1="130"
+                  x2="150"
+                  y2="170"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  marker-end="url(#arrowhead)" />
+                <polygon
+                  points="150,170 190,195 150,220 110,195"
+                  fill="currentColor"
+                  fill-opacity="0.05"
+                  stroke="currentColor"
+                  stroke-width="2" />
+                <text
+                  x="150"
+                  y="199"
+                  text-anchor="middle"
+                  font-size="12"
+                  fill="currentColor"
+                  class="font-sans font-medium">
+                  Decision
+                </text>
+
+                <defs>
+                  <marker
+                    id="arrowhead"
+                    markerWidth="10"
+                    markerHeight="7"
+                    refX="9"
+                    refY="3.5"
+                    orient="auto">
+                    <polygon points="0 0, 10 3.5, 0 7" fill="currentColor" />
+                  </marker>
+                </defs>
+              </svg>
+            </div>
+          </div>
+
+          <div class="absolute right-6 bottom-6 z-10 flex flex-col gap-2">
+            <div
+              class="theme-transition flex flex-col overflow-hidden rounded-lg border border-border bg-background shadow-lg">
+              <button
+                class="border-b border-border p-2 text-foreground transition-colors hover:bg-muted">
+                <i data-lucide="zoom-in" class="h-4 w-4"></i>
+              </button>
+              <button
+                class="border-b border-border p-2 text-foreground transition-colors hover:bg-muted">
+                <i data-lucide="zoom-out" class="h-4 w-4"></i>
+              </button>
+              <button class="p-2 text-foreground transition-colors hover:bg-muted">
+                <i data-lucide="maximize" class="h-4 w-4"></i>
+              </button>
+            </div>
+            <button
+              class="theme-transition rounded-lg border border-border bg-background p-2 text-foreground shadow-lg transition-colors hover:text-primary">
+              <span class="block px-1 text-[10px] font-bold">100%</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Status Bar -->
+    <footer
+      class="z-50 flex h-7 shrink-0 items-center justify-between bg-primary px-3 text-[10px] font-bold tracking-wider text-white uppercase">
+      <div class="flex items-center gap-4">
+        <div class="flex cursor-pointer items-center gap-1.5 transition-opacity hover:opacity-80">
+          <i data-lucide="square" class="h-3 w-3"></i>
+          Hand-Drawn
+        </div>
+        <div class="flex cursor-pointer items-center gap-1.5 transition-opacity hover:opacity-80">
+          <i data-lucide="check-square" class="h-3 w-3"></i>
+          Background Grid
+        </div>
+      </div>
+
+      <div class="absolute left-1/2 -translate-x-1/2 font-medium opacity-80">
+        Graphi Live Editor <span class="mx-1 opacity-50">•</span> Developed by Batu Atakan Erol
+      </div>
+
+      <div class="flex items-center gap-4">
+        <div class="flex cursor-pointer items-center gap-1 hover:opacity-80">
+          <i data-lucide="shield-check" class="h-3 w-3"></i>
+          Privacy & Security
+        </div>
+        <div class="h-3 w-[1px] bg-white/30"></div>
+
+        <div
+          class="flex cursor-pointer items-center gap-1 transition-colors hover:text-white/80"
+          id="theme-toggle">
+          <i data-lucide="sun" class="h-3 w-3" id="theme-icon"></i>
+          <span id="theme-text">Light Mode</span>
+        </div>
+
+        <div class="h-3 w-[1px] bg-white/30"></div>
+        <div class="font-mono">v11.12.0</div>
+      </div>
+    </footer>
+
+    <script>
+      lucide.createIcons();
+
+      // Theme toggle logic
+      let isDark = true;
+      document.getElementById('theme-toggle').addEventListener('click', () => {
+        isDark = !isDark;
+        const root = document.getElementById('html-root');
+        const icon = document.getElementById('theme-icon');
+        const text = document.getElementById('theme-text');
+
+        if (isDark) {
+          root.classList.add('dark');
+          icon.setAttribute('data-lucide', 'sun');
+          text.textContent = 'Light Mode';
+        } else {
+          root.classList.remove('dark');
+          icon.setAttribute('data-lucide', 'moon');
+          text.textContent = 'Dark Mode';
+        }
+        lucide.createIcons();
+      });
+    </script>
+  </body>
+</html>

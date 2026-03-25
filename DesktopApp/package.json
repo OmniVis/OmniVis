@@ -1,0 +1,57 @@
+{
+  "name": "graphi-desktop-app",
+  "version": "1.4.1",
+  "description": "Desktop version of Graphi Live Editor",
+  "main": "main.js",
+  "homepage": "https://github.com/GraphiTeam/GraphiTeam",
+  "author": "Graphi Team <support@graphi.app>",
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "npm run build:win && node create_installer.js",
+    "package": "node build_clean.js --platform=win32",
+    "build:win": "node build_clean.js --platform=win32",
+    "build:clean": "node build_clean.js --platform=win32",
+    "build:mac": "node build_clean.js --platform=darwin",
+    "build:linux": "node build_clean.js --platform=linux",
+    "build:all": "node build_clean.js --platform=win32 && node build_clean.js --platform=linux && node build_clean.js --platform=darwin",
+    "zip": "node zip_releases.js",
+    "release": "npm run build:all && npm run zip",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "keywords": [
+    "Electron",
+    "Graphi",
+    "Desktop"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^28.1.0",
+    "electron-builder": "24.9.1",
+    "electron-packager": "^17.1.2",
+    "electron-winstaller": "^5.4.0",
+    "png-to-ico": "^3.0.1",
+    "png2icons": "^2.0.1"
+  },
+  "dependencies": {
+    "electron-serve": "^1.2.0",
+    "electron-updater": "^6.1.7"
+  },
+  "build": {
+    "appId": "com.graphi.desktop",
+    "productName": "Graphi Desktop",
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Graphics",
+      "icon": "graphi-icon.png"
+    }
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "electron"
+    ]
+  }
+}

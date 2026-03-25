@@ -1,0 +1,15 @@
+<script lang="ts">
+  import { cn, type WithoutChildrenOrChild } from '$lib/utils.js';
+  import { Dialog as SheetPrimitive } from 'bits-ui';
+
+  let {
+    ref = $bindable(null),
+    class: className,
+    ...restProps
+  }: WithoutChildrenOrChild<SheetPrimitive.TitleProps> = $props();
+</script>
+
+<SheetPrimitive.Title
+  bind:ref
+  class={cn('text-lg font-semibold text-foreground', className)}
+  {...restProps} />
