@@ -5,10 +5,7 @@ stages:
 variables:
   DOCKER_DRIVER: overlay2
   DOCKER_TLS_CERTDIR: ""
-  VM_IP: "10.1.101.43"
-  VM_USER: "root"
   DEPLOY_DIR: "/opt/graphi"
-  SSH_OPTS: "-v -i /tmp/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -o PreferredAuthentications=publickey -o PubkeyAuthentication=yes -o PasswordAuthentication=no"
 
 build-graphi-image:
   stage: build
@@ -28,23 +25,21 @@ deploy-graphi:
   stage: deploy
   image: alpine:latest
   before_script:
-    - apk add --no-cache openssh-client rsync
-    - echo "$SSH_PRIVATE_KEY" | tr -d '\r\n ' | base64 -d > /tmp/deploy_key
-    - echo "" >> /tmp/deploy_key
-    - chmod 600 /tmp/deploy_key
-    - ssh-keygen -y -f /tmp/deploy_key
-    - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
-    - ssh-keyscan -H $VM_IP >> ~/.ssh/known_hosts
+    - apk add --no-cache openssh-client sshpass rsync
+    - mkdir -p ~/.ssh && chmod 700 ~/.ssh
+    - ssh-keyscan -H 10.1.101.43 >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
+    - export SSHPASS="$SSH_PASSWORD"
+    - SSH_OPTS="-o StrictHostKeyChecking=no"
+    - SSHPASS_CMD="sshpass -e ssh $SSH_OPTS"
   script:
-    - ssh $SSH_OPTS $VM_USER@$VM_IP "mkdir -p $DEPLOY_DIR"
-    - rsync -avz -e "ssh $SSH_OPTS" docker-compose.yml $VM_USER@$VM_IP:$DEPLOY_DIR/
-    - ssh $SSH_OPTS $VM_USER@$VM_IP "cd $DEPLOY_DIR && podman login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY"
-    - ssh $SSH_OPTS $VM_USER@$VM_IP "cd $DEPLOY_DIR && podman-compose pull"
-    - ssh $SSH_OPTS $VM_USER@$VM_IP "cd $DEPLOY_DIR && podman-compose up -d"
+    - $SSHPASS_CMD $SSH_USER@10.1.101.43 "sudo mkdir -p $DEPLOY_DIR"
+    - rsync -avz -e "sshpass -e ssh $SSH_OPTS" docker-compose.yml $SSH_USER@10.1.101.43:$DEPLOY_DIR/
+    - $SSHPASS_CMD $SSH_USER@10.1.101.43 "cd $DEPLOY_DIR && sudo podman login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY"
+    - $SSHPASS_CMD $SSH_USER@10.1.101.43 "cd $DEPLOY_DIR && sudo podman-compose pull"
+    - $SSHPASS_CMD $SSH_USER@10.1.101.43 "cd $DEPLOY_DIR && sudo podman-compose up -d"
   after_script:
-    - rm -f /tmp/deploy_key
+    - echo "Deployment session finished"
   only:
     - main
     - master
