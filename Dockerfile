@@ -1,4 +1,4 @@
-FROM node:20.19.0-alpine AS builder
+FROM node:20.19.0-slim AS builder
 
 WORKDIR /app
 
@@ -6,7 +6,6 @@ WORKDIR /app
 RUN corepack enable pnpm
 
 # Install dependencies
-RUN apk add --no-cache libc6-compat
 COPY package.json pnpm-lock.yaml* ./
 RUN pnpm install --frozen-lockfile --ignore-scripts
 
