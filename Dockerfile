@@ -6,8 +6,12 @@ WORKDIR /app
 RUN corepack enable pnpm
 
 # Install dependencies
+# --mount=type=cache: pnpm store survives across builds (eliminates reused:0)
+# package-import-method=copy: avoids hardlink overhead on overlay2 filesystems
 COPY package.json pnpm-lock.yaml* ./
-RUN pnpm install --frozen-lockfile --ignore-scripts
+RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
+    pnpm install --frozen-lockfile --ignore-scripts \
+    --config.package-import-method=copy
 
 # Copy application files
 COPY . .

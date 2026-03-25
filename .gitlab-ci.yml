@@ -5,6 +5,7 @@ stages:
 variables:
   DOCKER_DRIVER: overlay2
   DOCKER_TLS_CERTDIR: ""
+  DOCKER_BUILDKIT: "1"
   DEPLOY_DIR: "/opt/graphi"
 
 build-graphi-image:
