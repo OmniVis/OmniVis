@@ -20,8 +20,9 @@ COPY . .
 ARG BASE_PATH=/graphi
 ENV BASE_PATH=${BASE_PATH}
 
-# Build the application
-RUN pnpm build
+# Build the application — NODE_OPTIONS increases heap to 4 GB to prevent OOM
+# on large builds (5000+ modules cause Vite to exceed the default ~1.5 GB limit)
+RUN NODE_OPTIONS="--max-old-space-size=4096" pnpm build
 
 FROM nginx:alpine
 # Remove default nginx static assets
