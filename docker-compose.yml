@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   graphi:
-    image: registry.gitlab.adesso-group.com/cdfec176/competence-centers/cc_api_management/aitools/graphi:latest
+    image: ${CI_REGISTRY_IMAGE}:latest
     container_name: tools-graphi
     restart: always
     networks:

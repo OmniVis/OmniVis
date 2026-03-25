@@ -34,9 +34,10 @@ deploy-graphi:
     - SSH_OPTS="-o StrictHostKeyChecking=no"
     - SSHPASS_CMD="sshpass -e ssh $SSH_OPTS"
   script:
-    # Fix: Befehle in '...' eingeschlossen, um YAML-Parsing-Fehler mit dem Doppelpunkt zu vermeiden
     - '$SSHPASS_CMD $SSH_USER@10.1.101.43 "sudo mkdir -p $DEPLOY_DIR && sudo chown $SSH_USER: $DEPLOY_DIR && sudo chmod 755 $DEPLOY_DIR"'
-    - 'rsync -avz -e "sshpass -e ssh $SSH_OPTS" docker-compose.yml $SSH_USER@10.1.101.43:$DEPLOY_DIR/'
+    # .env mit CI_REGISTRY_IMAGE erzeugen, damit podman-compose die Variable auf der VM kennt
+    - 'echo "CI_REGISTRY_IMAGE=$CI_REGISTRY_IMAGE" > .env'
+    - 'rsync -avz -e "sshpass -e ssh $SSH_OPTS" docker-compose.yml .env $SSH_USER@10.1.101.43:$DEPLOY_DIR/'
     - '$SSHPASS_CMD $SSH_USER@10.1.101.43 "sudo podman login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY"'
     - '$SSHPASS_CMD $SSH_USER@10.1.101.43 "cd $DEPLOY_DIR && sudo podman-compose pull"'
     - '$SSHPASS_CMD $SSH_USER@10.1.101.43 "cd $DEPLOY_DIR && sudo podman-compose up -d --remove-orphans"'
