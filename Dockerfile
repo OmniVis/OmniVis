@@ -7,6 +7,7 @@ RUN rm -rf /usr/share/nginx/html/*
 # The target/ directory is produced by the build-app CI stage and passed into this
 # job's workspace as a GitLab CI artifact — no Node.js build step needed here.
 COPY target /usr/share/nginx/html/graphi
+RUN chmod -R a+rX /usr/share/nginx/html
 
 # SPA-aware nginx config:
 # - try_files serves static assets (JS/CSS) directly with the correct MIME type
