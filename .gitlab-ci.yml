@@ -23,6 +23,7 @@ build-app:
   script:
     - pnpm install --frozen-lockfile --ignore-scripts
     - NODE_OPTIONS="--max-old-space-size=4096" pnpm build
+    - test -d target/_app/immutable || (echo "ERROR: target/_app/immutable missing - build failed to produce JS bundles" && exit 1)
   cache:
     key:
       files:
