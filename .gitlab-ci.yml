@@ -5,9 +5,9 @@ stages:
 
 variables:
   DOCKER_DRIVER: overlay2
-  DOCKER_TLS_CERTDIR: ""
-  DOCKER_BUILDKIT: "1"
-  DEPLOY_DIR: "/opt/graphi"
+  DOCKER_TLS_CERTDIR: ''
+  DOCKER_BUILDKIT: '1'
+  DEPLOY_DIR: '/opt/graphi'
 
 # Stage 1: compile the SvelteKit SPA in a Node container.
 # Runs separately from Docker so we can apply NODE_OPTIONS to beat OOM
@@ -16,7 +16,7 @@ build-app:
   stage: build-app
   image: node:20-slim
   variables:
-    BASE_PATH: "/graphi"
+    BASE_PATH: '/graphi'
   before_script:
     - corepack enable pnpm
     - pnpm config set store-dir .pnpm-store

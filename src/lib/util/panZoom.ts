@@ -27,82 +27,82 @@ export class PanZoomState {
   public updateElement(diagramView: SVGElement, { pan, zoom }: Pick<State, 'pan' | 'zoom'>) {
     try {
       this.pzoom?.destroy();
-    } catch (e) {
+    } catch {
       // Ignore destroy matrix error
     }
     let hammer: HammerManager | undefined;
     try {
       this.pzoom = panzoom(diagramView, {
-      center: true,
-      controlIconsEnabled: false,
-      customEventsHandler: {
-        haltEventListeners: ['touchstart', 'touchend', 'touchmove', 'touchleave', 'touchcancel'],
-        init: function (options) {
-          const instance = options.instance;
-          let initialScale = 1;
-          let pannedX = 0;
-          let pannedY = 0;
-          hammer = new Hammer(options.svgElement);
+        center: true,
+        controlIconsEnabled: false,
+        customEventsHandler: {
+          haltEventListeners: ['touchstart', 'touchend', 'touchmove', 'touchleave', 'touchcancel'],
+          init: function (options) {
+            const instance = options.instance;
+            let initialScale = 1;
+            let pannedX = 0;
+            let pannedY = 0;
+            hammer = new Hammer(options.svgElement);
 
-          const resetPanned = () => {
-            pannedX = 0;
-            pannedY = 0;
-          };
-          const handlePan = (event: HammerInput) => {
-            instance.panBy({ x: event.deltaX - pannedX, y: event.deltaY - pannedY });
-            pannedX = event.deltaX;
-            pannedY = event.deltaY;
-          };
+            const resetPanned = () => {
+              pannedX = 0;
+              pannedY = 0;
+            };
+            const handlePan = (event: HammerInput) => {
+              instance.panBy({ x: event.deltaX - pannedX, y: event.deltaY - pannedY });
+              pannedX = event.deltaX;
+              pannedY = event.deltaY;
+            };
 
-          hammer.get('pinch').set({ enable: true });
-          hammer.on('panstart panmove', function (event) {
-            if (event.type === 'panstart') {
-              resetPanned();
-            }
-            handlePan(event);
-          });
-          hammer.on('pinchstart pinchmove', function (event) {
-            if (event.type === 'pinchstart') {
-              initialScale = instance.getZoom();
-              resetPanned();
-            }
-            instance.zoomAtPoint(initialScale * event.scale, {
-              x: event.center.x,
-              y: event.center.y
+            hammer.get('pinch').set({ enable: true });
+            hammer.on('panstart panmove', function (event) {
+              if (event.type === 'panstart') {
+                resetPanned();
+              }
+              handlePan(event);
             });
-            handlePan(event);
-          });
-          options.svgElement.addEventListener('touchmove', function (event) {
-            event.preventDefault();
-          });
+            hammer.on('pinchstart pinchmove', function (event) {
+              if (event.type === 'pinchstart') {
+                initialScale = instance.getZoom();
+                resetPanned();
+              }
+              instance.zoomAtPoint(initialScale * event.scale, {
+                x: event.center.x,
+                y: event.center.y
+              });
+              handlePan(event);
+            });
+            options.svgElement.addEventListener('touchmove', function (event) {
+              event.preventDefault();
+            });
+          },
+          destroy: function () {
+            hammer?.destroy();
+          }
         },
-        destroy: function () {
-          hammer?.destroy();
-        }
-      },
-      fit: true,
-      maxZoom: 12,
-      minZoom: 0.2,
-      onPan: (pan) => {
-        this.pan = pan;
-        this.zoom = this.pzoom?.getZoom();
-        this.isDirty = true;
-        if (this.zoom) {
-          this.onPanZoomChange?.(this.pan, this.zoom);
-        }
-      },
-      onZoom: (zoom) => {
-        this.zoom = zoom;
-        this.pan = this.pzoom?.getPan();
-        this.isDirty = true;
-        if (this.pan) {
-          this.onPanZoomChange?.(this.pan, this.zoom);
-        }
-      },
-      panEnabled: true,
-      zoomEnabled: true
-    });
-    } catch (e) {
+        fit: true,
+        maxZoom: 12,
+        minZoom: 0.2,
+        onPan: (pan) => {
+          this.pan = pan;
+          this.zoom = this.pzoom?.getZoom();
+          this.isDirty = true;
+          if (this.zoom) {
+            this.onPanZoomChange?.(this.pan, this.zoom);
+          }
+        },
+        onZoom: (zoom) => {
+          this.zoom = zoom;
+          this.pan = this.pzoom?.getPan();
+          this.isDirty = true;
+          if (this.pan) {
+            this.onPanZoomChange?.(this.pan, this.zoom);
+          }
+        },
+        panEnabled: true,
+        zoomEnabled: true
+      });
+    } catch {
       // panzoom startup failure
       return;
     }
@@ -141,7 +141,7 @@ export class PanZoomState {
     try {
       this.pzoom.zoom(zoom);
       this.pzoom.pan(pan);
-    } catch (e) {
+    } catch {
       // SVGMatrix might not be invertible if SVG is hidden or 0x0
     }
   }
@@ -152,7 +152,7 @@ export class PanZoomState {
       if (!this.isDirty) {
         this.reset();
       }
-    } catch (e) {
+    } catch {
       // Ignore during unmounted/hidden states
     }
   }
@@ -160,13 +160,17 @@ export class PanZoomState {
   public zoomIn() {
     try {
       this.pzoom?.zoomIn();
-    } catch (e) {}
+    } catch {
+      // Ignore error
+    }
   }
 
   public zoomOut() {
     try {
       this.pzoom?.zoomOut();
-    } catch (e) {}
+    } catch {
+      // Ignore error
+    }
   }
 
   public reset() {
@@ -175,7 +179,7 @@ export class PanZoomState {
       // Zoom out a bit to avoid overlap with the toolbar
       this.pzoom?.zoom(0.875);
       this.isDirty = false;
-    } catch (e) {
+    } catch {
       // Ignore InvalidStateError SVGMatrix
     }
   }
