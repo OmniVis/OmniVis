@@ -37,7 +37,7 @@
 
   // Settings
   let apiKey = $state('');
-  let provider = $state<'gemini' | 'openai' | 'groq' | 'anthropic'>('groq'); // Default to Groq
+  let provider = $state<'gemini' | 'openai' | 'groq' | 'anthropic' | 'adesso'>('groq'); // Default to Groq
   let model = $state('llama-3.3-70b-versatile');
 
   // Load existing config
@@ -211,6 +211,7 @@
   let showProviderDropdown = $state(false);
 
   const providers = [
+    { value: 'adesso', label: 'adesso AI Hub', icon: '☁️' },
     { value: 'groq', label: 'Groq (Fast & Free)', icon: '⚡' },
     { value: 'gemini', label: 'Google Gemini', icon: '💎' },
     { value: 'anthropic', label: 'Anthropic Claude', icon: '🧠' },
@@ -218,19 +219,25 @@
   ];
 
   const models = {
-    groq: [
-      { value: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B (Recommended)' },
-      { value: 'llama-3.1-8b-instant', label: 'Llama 3.1 8B (Fast)' },
-      { value: 'mixtral-8x7b-32768', label: 'Mixtral 8x7B' }
+    adesso: [
+      { value: 'gpt-4.1', label: 'gpt-4.1 (Recommended)' },
+      { value: 'gpt-4o', label: 'gpt-4o' },
+      { value: 'gpt-4o-mini', label: 'gpt-4o Mini' },
+      { value: 'claude-3-5-sonnet', label: 'Claude 3.5 Sonnet' }
+    ],
+    anthropic: [
+      { value: 'claude-3-7-sonnet-latest', label: 'Claude 3.7 Sonnet (Smart)' },
+      { value: 'claude-3-5-haiku-latest', label: 'Claude 3.5 Haiku (Fast)' }
     ],
     gemini: [
       { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash (Fast)' },
       { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
       { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro (Capable)' }
     ],
-    anthropic: [
-      { value: 'claude-3-7-sonnet-latest', label: 'Claude 3.7 Sonnet (Smart)' },
-      { value: 'claude-3-5-haiku-latest', label: 'Claude 3.5 Haiku (Fast)' }
+    groq: [
+      { value: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B (Recommended)' },
+      { value: 'llama-3.1-8b-instant', label: 'Llama 3.1 8B (Fast)' },
+      { value: 'mixtral-8x7b-32768', label: 'Mixtral 8x7B' }
     ],
     openai: [
       { value: 'gpt-4o-mini', label: 'GPT-4o Mini (Fast)' },
@@ -241,7 +248,7 @@
 
   let showModelDropdown = $state(false);
 
-  function selectProvider(p: 'groq' | 'gemini' | 'openai' | 'anthropic') {
+  function selectProvider(p: 'groq' | 'gemini' | 'openai' | 'anthropic' | 'adesso') {
     provider = p;
     showProviderDropdown = false;
     // Set default models
@@ -249,6 +256,7 @@
     else if (provider === 'gemini') model = 'gemini-2.0-flash';
     else if (provider === 'anthropic') model = 'claude-3-7-sonnet-latest';
     else if (provider === 'openai') model = 'gpt-4o-mini';
+    else if (provider === 'adesso') model = 'gpt-4.1';
   }
 
   function selectModel(m: string) {
@@ -299,8 +307,8 @@
               <span>⚡ Groq (Fast & Free)</span>
             {:else if provider === 'gemini'}
               <span>💎 Google Gemini</span>
-            {:else if provider === 'anthropic'}
-              <span>🧠 Anthropic Claude</span>
+            {:else if provider === 'adesso'}
+              <span>☁️ adesso AI Hub</span>
             {:else}
               <span>🤖 OpenAI</span>
             {/if}
@@ -317,7 +325,9 @@
                     ? 'bg-primary/10 font-medium text-primary'
                     : ''}"
                   onclick={() =>
-                    selectProvider(p.value as 'groq' | 'gemini' | 'openai' | 'anthropic')}>
+                    selectProvider(
+                      p.value as 'groq' | 'gemini' | 'openai' | 'anthropic' | 'adesso'
+                    )}>
                   <span>{p.icon} {p.label}</span>
                   {#if provider === p.value}✓{/if}
                 </button>
@@ -353,6 +363,12 @@
           {:else if provider === 'anthropic'}
             (<a
               href="https://console.anthropic.com/settings/keys"
+              target="_blank"
+              class="text-primary hover:underline">Get Key</a
+            >)
+          {:else if provider === 'adesso'}
+            (<a
+              href="https://adesso-ai-hub.3asabc.de/"
               target="_blank"
               class="text-primary hover:underline">Get Key</a
             >)

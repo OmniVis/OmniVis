@@ -12,9 +12,11 @@ interface ChatMessage {
 
 interface AIServiceConfig {
   apiKey: string;
-  provider: 'gemini' | 'openai' | 'groq' | 'anthropic';
+  provider: 'gemini' | 'openai' | 'groq' | 'anthropic' | 'adesso';
   model?: string;
 }
+
+const ADESSO_BASE_URL = 'https://adesso-ai-hub.3asabc.de/v1';
 
 const SYSTEM_PROMPT = `
 ${MERMAID_EXPERT_CONTEXT}
@@ -91,6 +93,8 @@ async function generateDiagram(
     return callGroq(config.apiKey, contextMessage, history, config.model);
   } else if (config.provider === 'anthropic') {
     return callAnthropic(config.apiKey, contextMessage, history, config.model);
+  } else if (config.provider === 'adesso') {
+    return callAdesso(config.apiKey, contextMessage, history, config.model);
   } else {
     return callOpenAI(config.apiKey, contextMessage, history, config.model);
   }
@@ -301,6 +305,55 @@ async function callAnthropic(
     content?: { text?: string }[];
   };
   return data?.content?.[0]?.text || '';
+}
+
+async function callAdesso(
+  apiKey: string,
+  message: string,
+  history: ChatMessage[],
+  model?: string
+): Promise<string> {
+  const modelName = model || 'gpt-4.1';
+  const url = `${ADESSO_BASE_URL}/chat/completions`;
+
+  const messages: { role: 'system' | 'user' | 'assistant'; content: string }[] = [
+    { role: 'system', content: SYSTEM_PROMPT }
+  ];
+
+  for (const msg of history.slice(-6)) {
+    messages.push({
+      content: msg.content,
+      role: msg.role
+    });
+  }
+
+  messages.push({ content: message, role: 'user' });
+
+  const response = await fetch(url, {
+    body: JSON.stringify({
+      max_tokens: 4096,
+      messages,
+      model: modelName,
+      temperature: 0.3
+    }),
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json'
+    },
+    method: 'POST'
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(
+      `Adesso AI Hub error: ${response.status} - ${(errorData as { error?: { message?: string } })?.error?.message || response.statusText}`
+    );
+  }
+
+  const data = (await response.json()) as {
+    choices?: { message?: { content?: string } }[];
+  };
+  return data?.choices?.[0]?.message?.content || '';
 }
 
 export { clearConfig, generateDiagram, getConfig, saveConfig };
