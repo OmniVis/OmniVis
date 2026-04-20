@@ -333,7 +333,7 @@ ${svgString}`);
         <WidthIcon
           class={[
             'size-4 shrink-0 text-muted-foreground transition-all',
-            imageSizeMode === 'width' && 'rotate-90'
+            imageSizeMode === 'height' && 'rotate-90'
           ]} />
         <Input type="number" min="3" max="10000" bind:value={imageSize} class="h-8 text-xs" />
       </div>

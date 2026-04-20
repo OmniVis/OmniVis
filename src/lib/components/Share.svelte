@@ -19,13 +19,7 @@
 
     <div class="flex flex-col gap-4">
       <div class="flex flex-col gap-2">
-        <h2 class="flex items-center gap-2">
-          <img
-            class="size-5"
-            src="https://raw.githubusercontent.com/GraphiTeam/Assets/refs/heads/main/graphilogo.png"
-            alt="Graphi" />
-          Graphi
-        </h2>
+        <h2 class="flex items-center gap-2 font-bold">Graphi</h2>
         <CopyInput value={window.location.href} />
         <Dialog.Description>
           The content of the diagrams you create never leaves your browser.

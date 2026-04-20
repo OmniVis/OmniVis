@@ -1,11 +1,9 @@
 <script lang="ts">
-  import { Button } from '$/components/ui/button';
   import { cn } from '$/utils';
   import FolderIcon from '~icons/material-symbols/folder-open';
   import ExportIcon from '~icons/material-symbols/download';
   import TemplateIcon from '~icons/material-symbols/grid-view';
   import SettingsIcon from '~icons/material-symbols/settings';
-  import InfoIcon from '~icons/material-symbols/info-outline';
   import HistoryIcon from '~icons/material-symbols/history';
   import PaletteIcon from '~icons/material-symbols/palette';
   import KeyboardIcon from '~icons/material-symbols/keyboard-outline';
@@ -27,7 +25,6 @@
 
   const secondaryActions = [
     { id: 'shortcuts', icon: KeyboardIcon, label: 'Keyboard Shortcuts' },
-    { id: 'credits', icon: InfoIcon, label: 'Credits' },
     { id: 'settings', icon: SettingsIcon, label: 'Settings' }
   ];
 </script>

@@ -11,12 +11,10 @@
   import MainMenu from '$/components/MainMenu.svelte';
   import { Button } from '$/components/ui/button';
   import { Separator } from '$/components/ui/separator';
-  import type { ComponentProps, Snippet } from 'svelte';
+  import type { Snippet } from 'svelte';
   import { stateStore } from '$/util/state';
   import { explorerVisible } from '$/util/fileMetadata.svelte';
-  import DropdownNavMenu from './DropdownNavMenu.svelte';
   import SideNavigationIcon from '~icons/material-symbols/menu-open-rounded';
-  import GithubIcon from '~icons/mdi/github';
 
   interface Props {
     mobileToggle?: Snippet;
@@ -24,20 +22,6 @@
   }
 
   let { children, mobileToggle }: Props = $props();
-
-  type Links = ComponentProps<typeof DropdownNavMenu>['links'];
-
-  const githubLinks: Links = [
-    { title: 'Mermaid JS', href: 'https://github.com/mermaid-js/mermaid' },
-    {
-      title: 'Mermaid Live Editor',
-      href: 'https://github.com/mermaid-js/mermaid-live-editor'
-    },
-    {
-      title: 'Mermaid CLI',
-      href: 'https://github.com/mermaid-js/mermaid-cli'
-    }
-  ];
 </script>
 
 <nav class="z-50 flex p-4 sm:p-6">
@@ -65,7 +49,6 @@
       title={explorerVisible.visible ? 'Hide Explorer' : 'Show Explorer'}>
       <SideNavigationIcon />
     </Button>
-    <DropdownNavMenu icon={GithubIcon} links={githubLinks} />
     <Separator orientation="vertical" />
     {@render children()}
   </div>

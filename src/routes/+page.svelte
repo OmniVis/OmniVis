@@ -1,17 +1,6 @@
 <script lang="ts">
-  import { base } from '$app/paths';
   import { onMount } from 'svelte';
-  import {
-    Zap,
-    ArrowRight,
-    Settings,
-    Download,
-    Monitor,
-    Activity,
-    CheckCircle2,
-    Share2,
-    Github
-  } from 'lucide-svelte';
+  import { Zap, ArrowRight, Settings, Download, Share2 } from 'lucide-svelte';
 
   import SiteNavbar from '$/components/SiteNavbar.svelte';
 
@@ -19,15 +8,8 @@
   const description =
     'Create beautiful diagrams with valid Markdown and Mermaid logic. The editor for professionals.';
 
-  let isElectron = false;
-
   onMount(() => {
-    if (
-      typeof navigator !== 'undefined' &&
-      navigator.userAgent.toLowerCase().includes(' electron/')
-    ) {
-      isElectron = true;
-    }
+    // Landing page mounted
   });
 </script>
 
@@ -84,11 +66,6 @@
             class="flex items-center justify-center gap-2 rounded-full bg-indigo-600 px-8 py-4 text-lg font-semibold text-white shadow-md transition-all hover:-translate-y-0.5 hover:bg-indigo-700 hover:shadow-lg">
             Open Web Editor
             <ArrowRight class="h-5 w-5" />
-          </a>
-          <a
-            href="#downloads"
-            class="flex items-center justify-center gap-2 rounded-full border border-border bg-background px-8 py-4 text-lg font-semibold text-foreground transition-all hover:bg-muted">
-            Download Desktop App
           </a>
         </div>
 
@@ -227,89 +204,6 @@
       </div>
     </section>
 
-    <!-- Desktop Downloads Section -->
-    {#if !isElectron}
-      <section id="downloads" class="border-t border-border bg-background py-24">
-        <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-          <div class="mb-12 text-center">
-            <h2 class="mb-4 text-3xl font-bold text-foreground">Get Graphi for Desktop</h2>
-            <p class="mx-auto max-w-2xl text-lg text-muted-foreground">
-              Working offline? Download the desktop app to use Graphi without an internet
-              connection, directly on your machine.
-            </p>
-          </div>
-
-          <div
-            class="relative overflow-hidden rounded-3xl bg-indigo-600 p-10 text-center text-white shadow-2xl">
-            <div
-              class="absolute top-0 right-0 h-64 w-64 translate-x-1/2 -translate-y-1/2 transform rounded-full bg-white opacity-5 blur-3xl">
-            </div>
-            <div
-              class="absolute bottom-0 left-0 h-48 w-48 -translate-x-1/2 translate-y-1/2 transform rounded-full bg-black opacity-10 blur-2xl">
-            </div>
-
-            <div class="relative z-10 flex flex-col justify-center gap-6 md:flex-row">
-              <!-- Windows -->
-              <a
-                href="https://github.com/GraphiTeam/GraphiTeam/releases/latest/download/Graphi-Desktop-Win-Installer.exe"
-                target="_blank"
-                class="group flex flex-1 flex-col items-center gap-4 rounded-2xl border border-white/20 bg-white/10 p-6 backdrop-blur-sm transition-all hover:bg-white/20">
-                <Monitor
-                  class="h-10 w-10 text-indigo-200 transition-colors group-hover:text-white" />
-                <div>
-                  <h4 class="mb-1 text-xl font-bold">Windows</h4>
-                  <p class="text-sm text-indigo-200">Download .exe Setup</p>
-                </div>
-              </a>
-
-              <!-- macOS -->
-              <a
-                href="https://github.com/GraphiTeam/GraphiTeam/releases/latest/download/Graphi-Desktop-macOS.dmg"
-                target="_blank"
-                class="group flex flex-1 flex-col items-center gap-4 rounded-2xl border border-white/20 bg-white/10 p-6 backdrop-blur-sm transition-all hover:bg-white/20">
-                <svg
-                  class="h-10 w-10 text-indigo-200 transition-colors group-hover:text-white"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10H12V2z" /></svg>
-                <div>
-                  <h4 class="mb-1 text-xl font-bold">macOS</h4>
-                  <p class="text-sm text-indigo-200">Download .dmg</p>
-                </div>
-              </a>
-
-              <!-- Linux -->
-              <a
-                href="https://github.com/GraphiTeam/GraphiTeam/releases/latest/download/Graphi-Desktop-Linux.AppImage"
-                target="_blank"
-                class="group flex flex-1 flex-col items-center gap-4 rounded-2xl border border-white/20 bg-white/10 p-6 backdrop-blur-sm transition-all hover:bg-white/20">
-                <svg
-                  class="h-10 w-10 text-indigo-200 transition-colors group-hover:text-white"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  ><rect x="2" y="3" width="20" height="14" rx="2" ry="2" /><line
-                    x1="8"
-                    y1="21"
-                    x2="16"
-                    y2="21" /><line x1="12" y1="17" x2="12" y2="21" /></svg>
-                <div>
-                  <h4 class="mb-1 text-xl font-bold">Linux</h4>
-                  <p class="text-sm text-indigo-200">Download .AppImage</p>
-                </div>
-              </a>
-            </div>
-          </div>
-        </div>
-      </section>
-    {/if}
-
     <section class="border-t border-border bg-muted/30 py-20">
       <div class="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
         <h2 class="mb-6 text-3xl font-bold text-foreground md:text-5xl">
@@ -324,9 +218,6 @@
             class="w-full rounded-full bg-indigo-600 px-8 py-4 text-lg font-bold text-white shadow-md transition-colors hover:bg-indigo-700 sm:w-auto">
             Open Editor Now
           </a>
-        </div>
-        <div class="mt-8 flex items-center justify-center gap-2 text-sm text-gray-500">
-          <CheckCircle2 class="h-4 w-4 text-emerald-500" /> Free and open-source forever.
         </div>
       </div>
     </section>
@@ -343,15 +234,6 @@
             <Share2 class="h-3 w-3 text-white" />
           </div>
           <span class="text-xl font-bold text-foreground">Graphi</span>
-        </div>
-
-        <div class="flex gap-4">
-          <a
-            href="https://github.com/GraphiTeam/GraphiTeam"
-            target="_blank"
-            class="flex items-center gap-2 text-muted-foreground transition-colors hover:text-indigo-600 dark:hover:text-indigo-400">
-            <Github class="h-5 w-5" /> Code on GitHub
-          </a>
         </div>
       </div>
 

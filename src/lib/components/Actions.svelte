@@ -9,14 +9,12 @@
   import * as ToggleGroup from '$/components/ui/toggle-group';
   import { TID } from '$/constants';
   import { getDomain } from '$/util/util';
-  import { browser } from '$app/environment';
   import { get } from 'svelte/store';
   import { waitForRender } from '$lib/util/autoSync';
   import { activeFileHandle, activeVirtualFileId } from '$lib/util/fileSystem';
   import { siteFiles } from '$lib/util/siteWorkspace.svelte';
   import { inputStateStore, stateStore, urlsStore } from '$lib/util/state';
   import { logEvent } from '$lib/util/stats';
-  import { version as FAVersion } from '@fortawesome/fontawesome-free/package.json';
   import dayjs from 'dayjs';
   import { toBase64 } from 'js-base64';
   import DownloadIcon from '~icons/material-symbols/download';
@@ -24,7 +22,6 @@
   import WidthIcon from '~icons/material-symbols/width-rounded';
 
   import {
-    exportToGitHubReadme,
     exportToConfluence,
     exportToJira,
     exportToHtml,
@@ -32,13 +29,6 @@
     downloadAsFile
   } from '$/util/exportPlugins';
   import { toast } from 'svelte-sonner';
-
-  const FONT_AWESOME_URL = `https://cdnjs.cloudflare.com/ajax/libs/font-awesome/${FAVersion}/css/all.min.css`;
-
-  type Exporter = (context: CanvasRenderingContext2D, image: HTMLImageElement) => () => void;
-
-  let imageSizeMode: 'auto' | 'width' | 'height' = $state('auto');
-  let isTransparent = $state(false);
 
   $effect(() => {
     if (!imageSizeMode) {
@@ -230,23 +220,6 @@ ${svgString}`);
       type: 'svg'
     });
   };
-
-  let gistURL = $state('');
-  stateStore.subscribe(({ loader }) => {
-    if (loader?.type === 'gist') {
-      gistURL = loader.config.url;
-    }
-  });
-
-  const loadGist = () => {
-    if (!gistURL) {
-      return alert('Please enter a Gist URL first');
-    }
-    window.location.href = `${window.location.pathname}?gist=${gistURL}`;
-    logEvent('loadGist');
-  };
-
-  const isNetlify = browser && window.location.host.includes('netlify');
 </script>
 
 {#snippet dualActionButton(text: string, download: (event: Event) => unknown, url?: string)}
@@ -277,7 +250,7 @@ ${svgString}`);
       </ToggleGroup.Root>
       {#if imageSizeMode !== 'auto'}
         <WidthIcon
-          class={['size-6 shrink-0 transition-all', imageSizeMode === 'width' && 'rotate-90']} />
+          class={['size-6 shrink-0 transition-all', imageSizeMode === 'height' && 'rotate-90']} />
       {/if}
       <Input
         type="number"
@@ -316,30 +289,9 @@ ${svgString}`);
       isVisible={!!$urlsStore.mdCode}>
       <CopyInput value={$urlsStore.mdCode} label="Copy Markdown" testID={TID.copyMarkdown} />
     </ExternalLinkWrapper>
-    <div class="flex w-full items-center gap-2">
-      <Input type="url" bind:value={gistURL} placeholder="Enter Gist URL" />
-      <Button onclick={loadGist}>Load Gist</Button>
-    </div>
-    {#if isNetlify}
-      <div class="flex w-full items-center justify-center">
-        <a class="link text-sm text-gray-500 underline" href="https://netlify.com">
-          This site is powered by Netlify
-        </a>
-      </div>
-    {/if}
     <Separator />
     <p class="px-1 text-xs font-semibold text-muted-foreground">Export To...</p>
     <div class="flex flex-wrap gap-1">
-      <Button
-        size="sm"
-        variant="outline"
-        class="flex-1 text-xs"
-        onclick={async () => {
-          const ok = await copyToClipboard(exportToGitHubReadme($stateStore.code));
-          if (ok) toast.success('GitHub Markdown copied!');
-        }}>
-        GitHub
-      </Button>
       <Button
         size="sm"
         variant="outline"

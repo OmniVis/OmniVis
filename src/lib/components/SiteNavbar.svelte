@@ -3,7 +3,6 @@
   import { Button } from '$/components/ui/button';
   import {
     Share2,
-    Github,
     Sun,
     Moon,
     Menu,
@@ -47,10 +46,6 @@
           class="font-medium text-muted-foreground transition-colors hover:text-primary"
           >Features</a>
         <a
-          href="{base}/#downloads"
-          class="font-medium text-muted-foreground transition-colors hover:text-primary"
-          >Downloads</a>
-        <a
           href="{base}/docs"
           class="font-medium text-muted-foreground transition-colors hover:text-primary"
           >Documentation</a>
@@ -78,12 +73,6 @@
           {/if}
         </Button>
 
-        <a
-          href="https://github.com/GraphiTeam/GraphiTeam"
-          target="_blank"
-          class="flex items-center gap-2 font-medium text-foreground transition-colors hover:text-primary">
-          <Github class="h-4 w-4" /> GitHub
-        </a>
         <Button
           href="{base}/edit/"
           class="h-auto rounded-full bg-primary px-5 py-2.5 font-medium text-primary-foreground shadow-sm transition-all hover:opacity-90 hover:shadow-md">
@@ -110,13 +99,10 @@
                 <DropdownMenu.Label class="font-normal">
                   <div class="flex flex-col space-y-1">
                     <p class="text-sm leading-none font-medium">{$authUser.login}</p>
-                    <p class="text-xs leading-none text-muted-foreground">GitHub Account</p>
+                    <p class="text-xs leading-none text-muted-foreground">User Profile</p>
                   </div>
                 </DropdownMenu.Label>
                 <DropdownMenu.Separator />
-                <DropdownMenu.Item onclick={() => window.open($authUser.html_url, '_blank')}>
-                  <Github class="mr-2 h-4 w-4" /> Go to Profile
-                </DropdownMenu.Item>
                 <DropdownMenu.Item onclick={logout} class="text-destructive focus:text-destructive">
                   <LogOut class="mr-2 h-4 w-4" /> Log out
                 </DropdownMenu.Item>
@@ -166,11 +152,6 @@
           class="block rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:bg-muted hover:text-primary"
           >Features</a>
         <a
-          href="{base}/#downloads"
-          on:click={toggleMobileMenu}
-          class="block rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:bg-muted hover:text-primary"
-          >Downloads</a>
-        <a
           href="{base}/docs"
           on:click={toggleMobileMenu}
           class="block rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:bg-muted hover:text-primary"
@@ -182,38 +163,30 @@
             class="block rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:bg-muted hover:text-primary"
             >Admin</a>
         {/if}
-        <div class="my-2 border-t border-border pt-2">
-          <a
-            href="https://github.com/GraphiTeam/GraphiTeam"
-            target="_blank"
-            class="block flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-base font-medium text-muted-foreground hover:bg-muted hover:text-primary">
-            <Github class="h-4 w-4" /> GitHub
-          </a>
-          <Button
-            href="{base}/edit/"
-            class="mt-2 h-auto w-full rounded-md bg-indigo-600 px-3 py-2 text-center text-base font-medium text-white hover:bg-indigo-700">
-            Open Editor
-          </Button>
-          {#if $isAuthenticated}
-            <button
-              on:click={() => {
-                logout();
-                toggleMobileMenu();
-              }}
-              class="mt-2 flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-base font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
-              <LogOut class="h-4 w-4" /> Logout
-            </button>
-          {:else}
-            <button
-              on:click={() => {
-                login();
-                toggleMobileMenu();
-              }}
-              class="mt-2 flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-base font-medium text-muted-foreground hover:bg-muted hover:text-primary">
-              <LogIn class="h-4 w-4" /> Login
-            </button>
-          {/if}
-        </div>
+        <Button
+          href="{base}/edit/"
+          class="mt-2 h-auto w-full rounded-md bg-indigo-600 px-3 py-2 text-center text-base font-medium text-white hover:bg-indigo-700">
+          Open Editor
+        </Button>
+        {#if $isAuthenticated}
+          <button
+            on:click={() => {
+              logout();
+              toggleMobileMenu();
+            }}
+            class="mt-2 flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-base font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
+            <LogOut class="h-4 w-4" /> Logout
+          </button>
+        {:else}
+          <button
+            on:click={() => {
+              login();
+              toggleMobileMenu();
+            }}
+            class="mt-2 flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-base font-medium text-muted-foreground hover:bg-muted hover:text-primary">
+            <LogIn class="h-4 w-4" /> Login
+          </button>
+        {/if}
       </div>
     </div>
   {/if}
