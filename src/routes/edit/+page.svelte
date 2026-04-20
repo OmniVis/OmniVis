@@ -1,5 +1,4 @@
 <script lang="ts">
-  import DiagramDocButton from '$/components/DiagramDocumentationButton.svelte';
   import Editor from '$/components/Editor.svelte';
   import FileExplorer from '$/components/FileExplorer/FileExplorer.svelte';
   import HistoryTimeline from '$/components/History/HistoryTimeline.svelte';
@@ -14,7 +13,6 @@
   import Share from '$/components/Share.svelte';
   import Settings from '$/components/Layout/Settings.svelte';
   import TemplatePane from '$/components/Layout/TemplatePane.svelte';
-  import Credits from '$/components/Layout/Credits.svelte';
   import View from '$/components/View.svelte';
   import { Button } from '$/components/ui/button';
   import * as Resizable from '$/components/ui/resizable';
@@ -33,8 +31,6 @@
   import SaveIcon from '~icons/material-symbols/save';
   import GearIcon from '~icons/material-symbols/settings';
   import Card from '$/components/Card/Card.svelte';
-  import HelpIcon from '~icons/material-symbols/help';
-  import Tutorial from '$/components/Layout/Tutorial.svelte';
   import AIChatSidebar from '$/components/AIChatSidebar.svelte';
   import { scheduleAutoSave } from '$/util/historyStore';
   import AIIcon from '~icons/material-symbols/auto-awesome';
@@ -51,8 +47,7 @@
 
   const editorTabs: Tab[] = [
     { icon: CodeIcon, id: 'code', title: 'Code' },
-    { icon: GearIcon, id: 'config', title: 'Config' },
-    { icon: HelpIcon, id: 'tutorial', title: 'Learning' }
+    { icon: GearIcon, id: 'config', title: 'Config' }
   ];
 
   let width = $state(1200);
@@ -301,9 +296,7 @@
                       ? 'Theme Store'
                       : activeSideBarView === 'templates'
                         ? 'Templates'
-                        : activeSideBarView === 'credits'
-                          ? 'Credits'
-                          : 'Settings'}>
+                        : 'Settings'}>
               {#if activeSideBarView === 'explorer' && !isMobile}
                 <div class="h-full p-2">
                   <FileExplorer {isMobile} />
@@ -325,8 +318,6 @@
                 <div class="h-full overflow-y-auto">
                   <TemplatePane />
                 </div>
-              {:else if activeSideBarView === 'credits'}
-                <Credits />
               {:else if activeSideBarView === 'settings'}
                 <Settings />
               {/if}
@@ -357,15 +348,9 @@
                   activeTabID={$stateStore.editorMode}
                   isClosable={false}
                   class="flex h-full w-full flex-col rounded-none border-0 bg-transparent">
-                  {#snippet actions()}
-                    <DiagramDocButton />
-                  {/snippet}
+                  {#snippet actions()}{/snippet}
                   <div class="relative flex-1 overflow-hidden">
-                    {#if $stateStore.editorMode === 'tutorial'}
-                      <Tutorial />
-                    {:else}
-                      <Editor {isMobile} />
-                    {/if}
+                    <Editor {isMobile} />
                   </div>
                 </Card>
               </Resizable.Pane>

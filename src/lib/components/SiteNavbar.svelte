@@ -45,10 +45,6 @@
           href="{base}/#features"
           class="font-medium text-muted-foreground transition-colors hover:text-primary"
           >Features</a>
-        <a
-          href="{base}/docs"
-          class="font-medium text-muted-foreground transition-colors hover:text-primary"
-          >Documentation</a>
 
         {#if $isAuthenticated}
           <a
@@ -151,11 +147,6 @@
           on:click={toggleMobileMenu}
           class="block rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:bg-muted hover:text-primary"
           >Features</a>
-        <a
-          href="{base}/docs"
-          on:click={toggleMobileMenu}
-          class="block rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:bg-muted hover:text-primary"
-          >Documentation</a>
         {#if $isAuthenticated}
           <a
             href="{base}/admin"

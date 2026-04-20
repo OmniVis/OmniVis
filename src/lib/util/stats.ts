@@ -73,50 +73,28 @@ const getBucket = (length: number): string => {
   return '10000+';
 };
 
-const minutesToMilliSeconds = (minutes: number): number => {
-  return minutes * 60_000;
-};
+export type AnalyticsEvent =
+  | 'bannerClick'
+  | 'copyClipboard'
+  | 'copyMarkdown'
+  | 'download'
+  | 'history'
+  | 'loadGist'
+  | 'loadSampleDiagram'
+  | 'migration'
+  | 'mobileViewToggle'
+  | 'panZoom'
+  | 'pwaInstalled'
+  | 'render'
+  | 'renderDiagram'
+  | 'themeChange'
+  | 'version';
 
-const defaultDelay = minutesToMilliSeconds(1);
-const delaysPerEvent = {
-  bannerClick: defaultDelay,
-  copyClipboard: defaultDelay,
-  copyMarkdown: defaultDelay,
-  download: defaultDelay,
-  history: defaultDelay,
-  loadGist: defaultDelay,
-  loadSampleDiagram: defaultDelay,
-  migration: defaultDelay,
-  mobileViewToggle: defaultDelay,
-  panZoom: minutesToMilliSeconds(10),
-  pwaInstalled: defaultDelay,
-  render: minutesToMilliSeconds(5),
-  renderDiagram: defaultDelay,
-  themeChange: defaultDelay,
-  version: defaultDelay
-} as const;
-export type AnalyticsEvent = keyof typeof delaysPerEvent;
-const timeouts: Map<string, number> = new Map<string, number>();
-// manual debounce to reduce the number of events sent to analytics
+// analytics disabled for internal version
 export const logEvent = (
   name: AnalyticsEvent,
   data?: Record<string, string | number | boolean>
 ): void => {
-  if (!plausible) {
-    return;
-  }
-  const key = data ? JSON.stringify({ data, name }) : name;
-  if (timeouts.has(key)) {
-    clearTimeout(timeouts.get(key));
-  } else {
-    plausible.trackEvent(
-      name,
-      { props: data },
-      { url: window.location.origin + window.location.pathname }
-    );
-  }
-  timeouts.set(
-    key,
-    window.setTimeout(() => timeouts.delete(key), delaysPerEvent[name])
-  );
+  void name;
+  void data;
 };
