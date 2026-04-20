@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { generateDiagram, getConfig, saveConfig } from '$/util/aiService';
+  import { generateDiagram } from '$/util/aiService';
   import { packFileContent } from '$/util/fileContent';
   import { SvelteMap } from 'svelte/reactivity';
-  import type { ChatMessage, AIServiceConfig } from '$/util/aiService';
+  import type { ChatMessage } from '$/util/aiService';
   import { Button } from '$/components/ui/button';
   import SparklesIcon from '~icons/material-symbols/auto-awesome';
   import SendIcon from '~icons/material-symbols/send';
@@ -11,7 +11,7 @@
   import SettingsIcon from '~icons/material-symbols/settings-outline';
   import UserIcon from '~icons/material-symbols/person';
   import RobotIcon from '~icons/material-symbols/smart-toy-outline';
-  import ChevronDownIcon from '~icons/material-symbols/keyboard-arrow-down';
+
   import AddNoteIcon from '~icons/material-symbols/note-add-outline';
   import FullscreenIcon from '~icons/material-symbols/fullscreen';
   import CheckIcon from '~icons/material-symbols/check-circle-outline';
@@ -19,6 +19,8 @@
   import Mermaid from 'mermaid';
   import { createVirtualFile } from '$lib/util/siteWorkspace.svelte';
   import { toast } from 'svelte-sonner';
+
+  import AISettingsModal from './AISettingsModal.svelte';
 
   interface Props {
     currentCode: string;
@@ -33,35 +35,7 @@
   let inputText = $state('');
   let isLoading = $state(false);
   let error = $state('');
-  let showSettings = $state(false);
-
-  // Settings
-  let apiKey = $state('');
-  let provider = $state<'gemini' | 'openai' | 'groq' | 'anthropic' | 'adesso'>('groq'); // Default to Groq
-  let model = $state('llama-3.3-70b-versatile');
-
-  // Load existing config
-  $effect(() => {
-    const config = getConfig();
-    if (config) {
-      apiKey = config.apiKey;
-      provider = config.provider;
-      model = config.model || '';
-    } else {
-      showSettings = true;
-    }
-  });
-
-  function saveSettings() {
-    const config: AIServiceConfig = {
-      apiKey,
-      model: model || undefined,
-      provider
-    };
-    saveConfig(config);
-    showSettings = false;
-    error = '';
-  }
+  let showSettingsModal = $state(false);
 
   async function sendMessage() {
     if (!inputText.trim() || isLoading) return;
@@ -206,63 +180,6 @@
       return `<div class="text-destructive p-2 text-xs">Syntax Error rendering diagram preview.</div><pre class="text-[10px] overflow-x-auto p-2 bg-background">${code}</pre>`;
     }
   }
-
-  /* Custom Dropdown Logic */
-  let showProviderDropdown = $state(false);
-
-  const providers = [
-    { value: 'adesso', label: 'adesso AI Hub', icon: '☁️' },
-    { value: 'groq', label: 'Groq (Fast & Free)', icon: '⚡' },
-    { value: 'gemini', label: 'Google Gemini', icon: '💎' },
-    { value: 'anthropic', label: 'Anthropic Claude', icon: '🧠' },
-    { value: 'openai', label: 'OpenAI', icon: '🤖' }
-  ];
-
-  const models = {
-    adesso: [
-      { value: 'gpt-4.1', label: 'gpt-4.1 (Recommended)' },
-      { value: 'gpt-4o', label: 'gpt-4o' },
-      { value: 'gpt-4o-mini', label: 'gpt-4o Mini' },
-      { value: 'claude-3-5-sonnet', label: 'Claude 3.5 Sonnet' }
-    ],
-    anthropic: [
-      { value: 'claude-3-7-sonnet-latest', label: 'Claude 3.7 Sonnet (Smart)' },
-      { value: 'claude-3-5-haiku-latest', label: 'Claude 3.5 Haiku (Fast)' }
-    ],
-    gemini: [
-      { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash (Fast)' },
-      { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash' },
-      { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro (Capable)' }
-    ],
-    groq: [
-      { value: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B (Recommended)' },
-      { value: 'llama-3.1-8b-instant', label: 'Llama 3.1 8B (Fast)' },
-      { value: 'mixtral-8x7b-32768', label: 'Mixtral 8x7B' }
-    ],
-    openai: [
-      { value: 'gpt-4o-mini', label: 'GPT-4o Mini (Fast)' },
-      { value: 'gpt-4o', label: 'GPT-4o (Smart)' },
-      { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo' }
-    ]
-  };
-
-  let showModelDropdown = $state(false);
-
-  function selectProvider(p: 'groq' | 'gemini' | 'openai' | 'anthropic' | 'adesso') {
-    provider = p;
-    showProviderDropdown = false;
-    // Set default models
-    if (provider === 'groq') model = 'llama-3.3-70b-versatile';
-    else if (provider === 'gemini') model = 'gemini-2.0-flash';
-    else if (provider === 'anthropic') model = 'claude-3-7-sonnet-latest';
-    else if (provider === 'openai') model = 'gpt-4o-mini';
-    else if (provider === 'adesso') model = 'gpt-4.1';
-  }
-
-  function selectModel(m: string) {
-    model = m;
-    showModelDropdown = false;
-  }
 </script>
 
 <div
@@ -279,8 +196,8 @@
       <Button
         variant="ghost"
         size="icon"
-        class={showSettings ? 'size-6 bg-muted' : 'size-6'}
-        onclick={() => (showSettings = !showSettings)}
+        class={showSettingsModal ? 'size-6 bg-muted' : 'size-6'}
+        onclick={() => (showSettingsModal = true)}
         title="Settings">
         <SettingsIcon class="size-3.5" />
       </Button>
@@ -293,141 +210,7 @@
     </div>
   </div>
 
-  <!-- Settings Panel -->
-  {#if showSettings}
-    <div class="glass-subtle flex flex-col gap-3 border-b border-border bg-muted/15 p-3">
-      <div class="flex flex-col gap-1">
-        <span class="text-[10px] font-bold tracking-wider text-muted-foreground uppercase"
-          >Provider</span>
-        <div class="relative w-full">
-          <button
-            class="flex w-full items-center justify-between rounded-md border border-border bg-background px-3 py-1.5 text-xs text-foreground transition-all hover:border-primary/50"
-            onclick={() => (showProviderDropdown = !showProviderDropdown)}>
-            {#if provider === 'groq'}
-              <span>⚡ Groq (Fast & Free)</span>
-            {:else if provider === 'gemini'}
-              <span>💎 Google Gemini</span>
-            {:else if provider === 'adesso'}
-              <span>☁️ adesso AI Hub</span>
-            {:else}
-              <span>🤖 OpenAI</span>
-            {/if}
-            <ChevronDownIcon class="size-4 opacity-50" />
-          </button>
-
-          {#if showProviderDropdown}
-            <div
-              class="absolute z-50 mt-1 w-full overflow-hidden rounded-md border border-border bg-popover p-1 shadow-md">
-              {#each providers as p (p.value)}
-                <button
-                  class="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-left text-xs text-popover-foreground hover:bg-accent hover:text-accent-foreground {provider ===
-                  p.value
-                    ? 'bg-primary/10 font-medium text-primary'
-                    : ''}"
-                  onclick={() =>
-                    selectProvider(
-                      p.value as 'groq' | 'gemini' | 'openai' | 'anthropic' | 'adesso'
-                    )}>
-                  <span>{p.icon} {p.label}</span>
-                  {#if provider === p.value}✓{/if}
-                </button>
-              {/each}
-            </div>
-            <!-- Overlay to close -->
-            <button
-              class="fixed inset-0 z-40 cursor-default"
-              style="background: transparent;"
-              onclick={() => (showProviderDropdown = false)}
-              aria-label="Close dropdown"></button>
-          {/if}
-        </div>
-      </div>
-
-      <div class="flex flex-col gap-1">
-        <label
-          for="ai-key"
-          class="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-          API Key
-          {#if provider === 'groq'}
-            (<a
-              href="https://console.groq.com/keys"
-              target="_blank"
-              class="text-primary hover:underline">Get Key</a
-            >)
-          {:else if provider === 'gemini'}
-            (<a
-              href="https://aistudio.google.com/app/apikey"
-              target="_blank"
-              class="text-primary hover:underline">Get Key</a
-            >)
-          {:else if provider === 'anthropic'}
-            (<a
-              href="https://console.anthropic.com/settings/keys"
-              target="_blank"
-              class="text-primary hover:underline">Get Key</a
-            >)
-          {:else if provider === 'adesso'}
-            (<a
-              href="https://adesso-ai-hub.3asabc.de/"
-              target="_blank"
-              class="text-primary hover:underline">Get Key</a
-            >)
-          {/if}
-        </label>
-        <input
-          id="ai-key"
-          type="password"
-          class="w-full rounded-md border border-border bg-background px-3 py-1.5 text-xs text-foreground transition-all outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
-          placeholder={provider === 'gemini'
-            ? 'AIza...'
-            : provider === 'groq'
-              ? 'gsk_...'
-              : 'sk-...'}
-          bind:value={apiKey} />
-      </div>
-
-      <div class="flex flex-col gap-1">
-        <label
-          for="ai-model"
-          class="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">Model</label>
-        <div class="relative w-full">
-          <button
-            class="flex w-full items-center justify-between rounded-md border border-border bg-background px-3 py-1.5 text-xs text-foreground transition-all hover:border-primary/50"
-            onclick={() => (showModelDropdown = !showModelDropdown)}>
-            <span>{models[provider]?.find((m) => m.value === model)?.label || model}</span>
-            <ChevronDownIcon class="size-4 opacity-50" />
-          </button>
-
-          {#if showModelDropdown}
-            <div
-              class="absolute z-50 mt-1 w-full overflow-hidden rounded-md border border-border bg-popover p-1 shadow-md">
-              {#each models[provider] || [] as m (m.value)}
-                <button
-                  class="flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-left text-xs text-popover-foreground hover:bg-accent hover:text-accent-foreground {model ===
-                  m.value
-                    ? 'bg-primary/10 font-medium text-primary'
-                    : ''}"
-                  onclick={() => selectModel(m.value)}>
-                  <span>{m.label}</span>
-                  {#if model === m.value}✓{/if}
-                </button>
-              {/each}
-            </div>
-            <button
-              class="fixed inset-0 z-40 cursor-default"
-              style="background: transparent;"
-              onclick={() => (showModelDropdown = false)}
-              aria-label="Close dropdown"></button>
-          {/if}
-        </div>
-      </div>
-
-      <div class="mt-1 flex gap-2">
-        <Button size="sm" onclick={saveSettings} class="h-8 w-full text-xs font-bold"
-          >Save Settings</Button>
-      </div>
-    </div>
-  {/if}
+  <AISettingsModal bind:open={showSettingsModal} />
 
   <!-- Messages -->
   <div class="flex flex-1 flex-col gap-3 overflow-y-auto p-3">

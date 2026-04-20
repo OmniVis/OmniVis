@@ -11,9 +11,10 @@ interface ChatMessage {
 }
 
 interface AIServiceConfig {
-  apiKey: string;
   provider: 'gemini' | 'openai' | 'groq' | 'anthropic' | 'adesso';
   model?: string;
+  keys: Record<string, string>;
+  apiKey?: string; // Legacy field for migration
 }
 
 const ADESSO_BASE_URL = 'https://adesso-ai-hub.3asabc.de/v1';
@@ -59,7 +60,19 @@ function getConfig(): AIServiceConfig | null {
   const stored = localStorage.getItem('graphi-ai-config');
   if (!stored) return null;
   try {
-    return JSON.parse(stored);
+    const config = JSON.parse(stored) as AIServiceConfig;
+
+    // Migration: If keys doesn't exist but apiKey does, migrate it
+    if (!config.keys) {
+      config.keys = {};
+      if (config.apiKey) {
+        config.keys[config.provider] = config.apiKey;
+        delete config.apiKey;
+        saveConfig(config); // Save the migrated version
+      }
+    }
+
+    return config;
   } catch {
     return null;
   }
@@ -79,8 +92,13 @@ async function generateDiagram(
   history: ChatMessage[]
 ): Promise<string> {
   const config = getConfig();
-  if (!config || !config.apiKey) {
-    throw new Error('API key not configured. Please set your API key in the AI settings.');
+  if (!config) {
+    throw new Error('AI Assistant not configured. Please open settings.');
+  }
+
+  const providerKey = config.keys?.[config.provider];
+  if (!providerKey) {
+    throw new Error(`API key for ${config.provider} not configured. Please open settings.`);
   }
 
   const contextMessage = existingCode
@@ -88,15 +106,15 @@ async function generateDiagram(
     : userMessage;
 
   if (config.provider === 'gemini') {
-    return callGemini(config.apiKey, contextMessage, history, config.model);
+    return callGemini(providerKey, contextMessage, history, config.model);
   } else if (config.provider === 'groq') {
-    return callGroq(config.apiKey, contextMessage, history, config.model);
+    return callGroq(providerKey, contextMessage, history, config.model);
   } else if (config.provider === 'anthropic') {
-    return callAnthropic(config.apiKey, contextMessage, history, config.model);
+    return callAnthropic(providerKey, contextMessage, history, config.model);
   } else if (config.provider === 'adesso') {
-    return callAdesso(config.apiKey, contextMessage, history, config.model);
+    return callAdesso(providerKey, contextMessage, history, config.model);
   } else {
-    return callOpenAI(config.apiKey, contextMessage, history, config.model);
+    return callOpenAI(providerKey, contextMessage, history, config.model);
   }
 }
 
