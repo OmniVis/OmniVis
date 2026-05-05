@@ -59,7 +59,7 @@
         </a>
         <div class="h-6 w-px bg-border"></div>
         <img
-          src="/branding/graphi-logomark-on-{$mode === 'dark' ? 'dark' : 'light'}.png"
+          src="{base}/branding/graphi-logomark-on-{$mode === 'dark' ? 'dark' : 'light'}.png"
           alt="Graphi Logo"
           class="h-8 w-auto object-contain" />
         <h1

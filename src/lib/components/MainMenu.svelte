@@ -4,6 +4,7 @@
   import { Switch } from '$/components/ui/switch';
   import { urlsStore } from '$/util/state';
   import { cn } from '$/utils';
+  import { base } from '$app/paths';
   import { mode, setMode } from 'mode-watcher';
   import type { Component, Snippet } from 'svelte';
   import AddIcon from '~icons/material-symbols/add';
@@ -92,7 +93,7 @@
     class="shrink-0 rounded-md p-1 transition-all outline-none hover:bg-muted focus:ring-2 focus:ring-primary"
     title="Main Menu">
     <img
-      src="/branding/graphi-logomark-on-{$mode === 'dark' ? 'dark' : 'light'}.png"
+      src="{base}/branding/graphi-logomark-on-{$mode === 'dark' ? 'dark' : 'light'}.png"
       alt="Graphi"
       class="size-6 object-contain" />
   </Popover.Trigger>

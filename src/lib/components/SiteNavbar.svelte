@@ -20,7 +20,7 @@
       <!-- Logo -->
       <a href="{base}/" class="flex flex-shrink-0 cursor-pointer items-center gap-2">
         <img
-          src="/branding/graphi-logo-lockup-on-{$mode === 'dark' ? 'dark' : 'light'}.png"
+          src="{base}/branding/graphi-logo-lockup-on-{$mode === 'dark' ? 'dark' : 'light'}.png"
           alt="Graphi Logo"
           class="h-8 w-auto object-contain" />
       </a>

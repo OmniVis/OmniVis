@@ -3,6 +3,7 @@
   import FileExplorer from '$/components/FileExplorer/FileExplorer.svelte';
   import HistoryTimeline from '$/components/History/HistoryTimeline.svelte';
   import ThemeStore from '$/components/ThemeStore.svelte';
+  import { base } from '$app/paths';
   import { mode } from 'mode-watcher';
   import ActivityBar from '$/components/Layout/ActivityBar.svelte';
   import ExportPane from '$/components/Layout/ExportPane.svelte';
@@ -170,7 +171,7 @@
       <div class="flex items-center gap-3">
         <div class="flex items-center gap-2">
           <img
-            src="/branding/graphi-logomark-on-{$mode === 'dark' ? 'dark' : 'light'}.png"
+            src="{base}/branding/graphi-logomark-on-{$mode === 'dark' ? 'dark' : 'light'}.png"
             alt="Graphi Logo"
             class="h-7 w-auto object-contain" />
           <span class="flex items-center gap-2 font-bold tracking-tight">

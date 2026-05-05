@@ -3,6 +3,7 @@
   import { Zap, ArrowRight, Settings, Download } from 'lucide-svelte';
 
   import SiteNavbar from '$/components/SiteNavbar.svelte';
+  import { base } from '$app/paths';
   import { mode } from 'mode-watcher';
 
   const title = 'Graphi - Diagramming for everyone';
@@ -88,7 +89,7 @@
               </div>
               <div class="flex -space-x-2">
                 <img
-                  src="/branding/graphi-logomark-on-{$mode === 'dark' ? 'dark' : 'light'}.png"
+                  src="{base}/branding/graphi-logomark-on-{$mode === 'dark' ? 'dark' : 'light'}.png"
                   alt="Graphi"
                   class="h-8 w-auto rounded-full border-2 border-white object-contain" />
               </div>
@@ -231,7 +232,7 @@
         class="mb-8 flex flex-col items-center justify-between gap-6 text-center md:flex-row md:text-left">
         <div class="flex items-center gap-2">
           <img
-            src="/branding/graphi-logomark-on-{$mode === 'dark' ? 'dark' : 'light'}.png"
+            src="{base}/branding/graphi-logomark-on-{$mode === 'dark' ? 'dark' : 'light'}.png"
             alt="Graphi Logo"
             class="h-6 w-auto rotate-3 object-contain" />
           <span class="text-xl font-bold text-foreground">Graphi</span>
