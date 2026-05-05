@@ -1,17 +1,7 @@
 <script lang="ts">
   import { base } from '$app/paths';
   import { Button } from '$/components/ui/button';
-  import {
-    Share2,
-    Sun,
-    Moon,
-    Menu,
-    X,
-    LogIn,
-    LayoutDashboard,
-    LogOut,
-    ChevronDown
-  } from 'lucide-svelte';
+  import { Sun, Moon, Menu, X, LogIn, LayoutDashboard, LogOut, ChevronDown } from 'lucide-svelte';
   import { mode, setMode } from 'mode-watcher';
   import { isAuthenticated, authUser, login, logout } from '$lib/stores/auth';
   import * as DropdownMenu from '$/components/ui/dropdown-menu';
@@ -29,11 +19,10 @@
     <div class="flex h-16 items-center justify-between">
       <!-- Logo -->
       <a href="{base}/" class="flex flex-shrink-0 cursor-pointer items-center gap-2">
-        <div
-          class="flex h-8 w-8 rotate-3 transform items-center justify-center rounded-lg bg-indigo-600 transition-transform hover:rotate-6">
-          <Share2 class="h-5 w-5 text-white" />
-        </div>
-        <span class="text-xl font-bold tracking-tight text-foreground">Graphi</span>
+        <img
+          src="/branding/graphi-logo-lockup-on-{$mode === 'dark' ? 'dark' : 'light'}.png"
+          alt="Graphi Logo"
+          class="h-8 w-auto object-contain" />
       </a>
 
       <!-- Desktop Navigation -->

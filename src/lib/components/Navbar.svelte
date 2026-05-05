@@ -14,6 +14,7 @@
   import type { Snippet } from 'svelte';
   import { stateStore } from '$/util/state';
   import { explorerVisible } from '$/util/fileMetadata.svelte';
+  import { mode } from 'mode-watcher';
   import SideNavigationIcon from '~icons/material-symbols/menu-open-rounded';
 
   interface Props {
@@ -28,9 +29,9 @@
   <div class="flex flex-1 items-center gap-2">
     <MainMenu />
     <img
-      src="https://raw.githubusercontent.com/GraphiTeam/GraphiTeam/refs/heads/main/static/graphi-logo.png"
-      alt="GraphiTeam Logo"
-      class="size-8 rounded-sm" />
+      src="/branding/graphi-logomark-on-{$mode === 'dark' ? 'dark' : 'light'}.png"
+      alt="Graphi Logo"
+      class="size-8 object-contain" />
     <a href="/" class="whitespace-nowrap text-accent">
       {#if !mobileToggle}
         GraphiTeam

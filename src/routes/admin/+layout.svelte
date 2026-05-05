@@ -13,6 +13,7 @@
     initAuthListener
   } from '$lib/stores/auth';
   import * as DropdownMenu from '$/components/ui/dropdown-menu';
+  import { mode } from 'mode-watcher';
   import { Github, LogOut, ChevronDown } from 'lucide-svelte';
 
   let authError = '';
@@ -57,7 +58,10 @@
           <Home class="h-5 w-5" />
         </a>
         <div class="h-6 w-px bg-border"></div>
-        <img src="/graphi-logo.png" alt="Graphi Logo" class="h-8 w-8 rounded" />
+        <img
+          src="/branding/graphi-logomark-on-{$mode === 'dark' ? 'dark' : 'light'}.png"
+          alt="Graphi Logo"
+          class="h-8 w-auto object-contain" />
         <h1
           class="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-xl font-bold text-transparent">
           Graphi CMS
