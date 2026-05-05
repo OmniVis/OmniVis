@@ -14,7 +14,6 @@
   import type { Snippet } from 'svelte';
   import { stateStore } from '$/util/state';
   import { explorerVisible } from '$/util/fileMetadata.svelte';
-  import { mode } from 'mode-watcher';
   import SideNavigationIcon from '~icons/material-symbols/menu-open-rounded';
 
   interface Props {
@@ -28,10 +27,6 @@
 <nav class="z-50 flex p-4 sm:p-6">
   <div class="flex flex-1 items-center gap-2">
     <MainMenu />
-    <img
-      src="/branding/graphi-logomark-on-{$mode === 'dark' ? 'dark' : 'light'}.png"
-      alt="Graphi Logo"
-      class="size-8 object-contain" />
     <a href="/" class="whitespace-nowrap text-accent">
       {#if !mobileToggle}
         GraphiTeam

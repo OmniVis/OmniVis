@@ -89,9 +89,12 @@
 
 <Popover.Root>
   <Popover.Trigger
-    class="shrink-0 rounded-md p-1 transition-colors outline-none hover:bg-muted focus:ring-2 focus:ring-primary"
+    class="shrink-0 rounded-md p-1 transition-all outline-none hover:bg-muted focus:ring-2 focus:ring-primary"
     title="Main Menu">
-    <PlaygroundIcon class="size-6 text-primary" />
+    <img
+      src="/branding/graphi-logomark-on-{$mode === 'dark' ? 'dark' : 'light'}.png"
+      alt="Graphi"
+      class="size-6 object-contain" />
   </Popover.Trigger>
   <Popover.Content
     align="start"
