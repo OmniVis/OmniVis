@@ -1,8 +1,9 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { Zap, ArrowRight, Settings, Download, Share2 } from 'lucide-svelte';
+  import { Zap, ArrowRight, Settings, Download } from 'lucide-svelte';
 
   import SiteNavbar from '$/components/SiteNavbar.svelte';
+  import { mode } from 'mode-watcher';
 
   const title = 'Graphi - Diagramming for everyone';
   const description =
@@ -86,10 +87,10 @@
                 </div>
               </div>
               <div class="flex -space-x-2">
-                <div
-                  class="flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-indigo-100 text-xs font-bold text-indigo-600">
-                  G
-                </div>
+                <img
+                  src="/branding/graphi-logomark-on-{$mode === 'dark' ? 'dark' : 'light'}.png"
+                  alt="Graphi"
+                  class="h-8 w-auto rounded-full border-2 border-white object-contain" />
               </div>
             </div>
 
@@ -229,10 +230,10 @@
       <div
         class="mb-8 flex flex-col items-center justify-between gap-6 text-center md:flex-row md:text-left">
         <div class="flex items-center gap-2">
-          <div
-            class="flex h-6 w-6 rotate-3 transform items-center justify-center rounded bg-indigo-600">
-            <Share2 class="h-3 w-3 text-white" />
-          </div>
+          <img
+            src="/branding/graphi-logomark-on-{$mode === 'dark' ? 'dark' : 'light'}.png"
+            alt="Graphi Logo"
+            class="h-6 w-auto rotate-3 object-contain" />
           <span class="text-xl font-bold text-foreground">Graphi</span>
         </div>
       </div>
