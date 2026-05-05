@@ -3,6 +3,7 @@
   import FileExplorer from '$/components/FileExplorer/FileExplorer.svelte';
   import HistoryTimeline from '$/components/History/HistoryTimeline.svelte';
   import ThemeStore from '$/components/ThemeStore.svelte';
+  import { mode } from 'mode-watcher';
   import ActivityBar from '$/components/Layout/ActivityBar.svelte';
   import ExportPane from '$/components/Layout/ExportPane.svelte';
   import MobileLayout from '$/components/Layout/MobileLayout.svelte';
@@ -168,10 +169,10 @@
       class="z-50 flex h-12 shrink-0 items-center justify-between border-b border-border bg-background px-4 transition-all duration-300">
       <div class="flex items-center gap-3">
         <div class="flex items-center gap-2">
-          <div
-            class="flex h-7 w-7 rotate-3 items-center justify-center rounded-lg bg-primary text-sm font-bold text-white shadow-sm">
-            G
-          </div>
+          <img
+            src="/branding/graphi-logomark-on-{$mode === 'dark' ? 'dark' : 'light'}.png"
+            alt="Graphi Logo"
+            class="h-7 w-auto object-contain" />
           <span class="flex items-center gap-2 font-bold tracking-tight">
             Graphi
             <span class="flex items-center gap-1 text-xs font-normal text-muted-foreground italic">
