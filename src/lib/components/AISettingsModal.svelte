@@ -12,8 +12,7 @@
     ExternalLink,
     Trash2,
     Sparkles,
-    ShieldCheck,
-    Zap
+    ShieldCheck
   } from 'lucide-svelte';
   import GeminiIcon from '$lib/icons/GeminiIcon.svelte';
   import ClaudeIcon from '$lib/icons/ClaudeIcon.svelte';
@@ -33,12 +32,12 @@
 
   // Config state
   let config = $state<AIServiceConfig>({
-    provider: 'groq',
+    provider: 'adesso',
     keys: {},
     model: ''
   });
 
-  let selectedProvider = $state<'gemini' | 'openai' | 'groq' | 'anthropic' | 'adesso'>('groq');
+  let selectedProvider = $state<'gemini' | 'openai' | 'anthropic' | 'adesso'>('adesso');
   let showKey = $state(false);
 
   const providers = [
@@ -48,7 +47,6 @@
       icon: AdessoIcon,
       url: 'https://adesso-ai-hub.3asabc.de/'
     },
-    { id: 'groq', label: 'Groq', icon: Zap, url: 'https://console.groq.com/keys' },
     {
       id: 'gemini',
       label: 'Google Gemini',

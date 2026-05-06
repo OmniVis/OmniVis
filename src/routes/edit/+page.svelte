@@ -37,6 +37,7 @@
   import { scheduleAutoSave } from '$/util/historyStore';
   import CheckIcon from '~icons/material-symbols/check-circle-outline';
   import ShortcutsModal from '$/components/Layout/ShortcutsModal.svelte';
+  import { aiRepairRequest } from '$/util/aiRepair';
 
   const panZoomState = new PanZoomState();
 
@@ -143,6 +144,12 @@
       autosave($stateStore.code);
     }
     scheduleAutoSave($stateStore.code, $stateStore.mermaid);
+  });
+
+  $effect(() => {
+    if ($aiRepairRequest) {
+      showAISidebar = true;
+    }
   });
 
   function handleKeydown(e: KeyboardEvent) {

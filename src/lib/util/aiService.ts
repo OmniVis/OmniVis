@@ -11,7 +11,7 @@ interface ChatMessage {
 }
 
 interface AIServiceConfig {
-  provider: 'gemini' | 'openai' | 'groq' | 'anthropic' | 'adesso';
+  provider: 'gemini' | 'openai' | 'anthropic' | 'adesso';
   model?: string;
   keys: Record<string, string>;
   apiKey?: string; // Legacy field for migration

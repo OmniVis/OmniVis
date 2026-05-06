@@ -21,6 +21,7 @@
   import { toast } from 'svelte-sonner';
 
   import AISettingsModal from './AISettingsModal.svelte';
+  import { aiRepairRequest } from '$lib/util/aiRepair';
 
   interface Props {
     currentCode: string;
@@ -37,18 +38,18 @@
   let error = $state('');
   let showSettingsModal = $state(false);
 
-  async function sendMessage() {
-    if (!inputText.trim() || isLoading) return;
+  async function sendMessage(overrideText?: string) {
+    const messageText = (overrideText ?? inputText).trim();
+    if (!messageText || isLoading) return;
 
     const userMsg: ChatMessage = {
       role: 'user',
-      content: inputText.trim(),
+      content: messageText,
       timestamp: Date.now()
     };
 
     messages = [...messages, userMsg];
-    const messageText = inputText;
-    inputText = '';
+    if (!overrideText) inputText = '';
     isLoading = true;
     error = '';
 
@@ -68,6 +69,15 @@
       isLoading = false;
     }
   }
+
+  // Auto-send when an AI repair request arrives from the error container
+  $effect(() => {
+    const request = $aiRepairRequest;
+    if (request) {
+      aiRepairRequest.set(null);
+      sendMessage(request);
+    }
+  });
 
   function handleKeydown(e: KeyboardEvent) {
     if (e.key === 'Enter' && !e.shiftKey) {

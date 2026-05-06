@@ -1,14 +1,13 @@
 <script lang="ts">
   import DesktopEditor from '$/components/DesktopEditor.svelte';
-  import McWrapper from '$/components/McWrapper.svelte';
-  import MermaidChartIcon from '$/components/MermaidChartIcon.svelte';
   import MobileEditor from '$/components/MobileEditor.svelte';
   import { Button } from '$/components/ui/button';
   import { TID } from '$/constants';
-  import { env } from '$/util/env';
-  import { stateStore, updateCode, updateConfig, urlsStore } from '$lib/util/state';
+  import { stateStore, updateCode, updateConfig } from '$lib/util/state';
+  import { aiRepairRequest } from '$lib/util/aiRepair';
   import { debounce } from 'lodash-es';
   import ExclamationCircleIcon from '~icons/material-symbols/error-outline-rounded';
+  import AIRepairIcon from '~icons/material-symbols/auto-fix-high';
 
   const { isMobile } = $props<{ isMobile: boolean }>();
 
@@ -42,6 +41,13 @@
     showError = true;
   }, 5000);
 
+  function handleAIRepair() {
+    const errorMsg = $stateStore.error?.toString() ?? 'Syntax error';
+    aiRepairRequest.set(
+      `Please fix this Mermaid.js syntax error.\n\nError:\n${errorMsg}\n\nReturn only the corrected Mermaid code.`
+    );
+  }
+
   $effect(() => {
     if ($stateStore.error) {
       showErrorDebounced();
@@ -68,35 +74,38 @@
   {/if}
   {#if showError && $stateStore.error instanceof Error}
     <div
-      class="flex flex-none flex-col border-t border-border text-sm"
+      class="flex flex-none flex-col border-t-2 border-destructive text-sm"
       data-testid={TID.errorContainer}>
-      <div class="flex items-center justify-between gap-2 bg-slate-900 p-2 text-white">
-        <div class="flex w-fit items-center gap-2">
-          <ExclamationCircleIcon class="size-6 text-destructive" aria-hidden="true" />
-          <div class="flex flex-col">
-            <p>Syntax error</p>
-            {#if env.isEnabledMermaidChartLinks && $stateStore.editorMode === 'code'}
-              <p class="text-xs text-white/60" data-testid={TID.aiHelpText}>
-                Create a free account to repair with AI
-              </p>
-            {/if}
+      <!-- Header -->
+      <div class="flex items-center justify-between gap-2 bg-destructive/5 px-3 py-2">
+        <div class="flex items-center gap-2">
+          <ExclamationCircleIcon class="size-4 shrink-0 text-destructive" aria-hidden="true" />
+          <div>
+            <p class="text-[11px] font-black tracking-wider text-destructive uppercase">
+              Syntax Error
+            </p>
+            <p class="text-[10px] text-muted-foreground">Use AI Repair to fix automatically</p>
           </div>
         </div>
         {#if $stateStore.editorMode === 'code'}
-          <McWrapper>
-            <Button
-              variant="accent"
-              size="sm"
-              data-testid={TID.aiRepairButton}
-              href={$urlsStore.mermaidChart({ medium: 'ai_repair' }).save}>
-              <MermaidChartIcon />
-              AI Repair
-            </Button>
-          </McWrapper>
+          <Button
+            variant="default"
+            size="sm"
+            data-testid={TID.aiRepairButton}
+            onclick={handleAIRepair}
+            class="h-7 shrink-0 gap-1.5 rounded-none px-3 text-[10px] font-bold tracking-wider uppercase">
+            <AIRepairIcon class="size-3.5" />
+            AI Repair
+          </Button>
         {/if}
       </div>
-      <output class="max-h-32 overflow-auto bg-muted p-2" name="mermaid-error" for="editor">
-        <pre>{$stateStore.error?.toString()}</pre>
+      <!-- Error message -->
+      <output
+        class="max-h-28 overflow-auto bg-background/50 px-3 py-2"
+        name="mermaid-error"
+        for="editor">
+        <pre
+          class="text-[10px] leading-relaxed whitespace-pre-wrap text-muted-foreground">{$stateStore.error?.toString()}</pre>
       </output>
     </div>
   {/if}
