@@ -322,63 +322,61 @@
         <Resizable.Pane order={2} defaultSize={80}>
           <div class="flex h-full flex-col overflow-hidden">
             <!-- Removed old header, now unified at top -->
-            <!-- Nested Resizable Group for Editor & Preview -->
-            <Resizable.PaneGroup
-              direction="horizontal"
-              class="h-full w-full flex-1"
-              autoSaveId="graphi-editor-panes">
-              <Resizable.Pane
-                order={1}
-                defaultSize={50}
-                minSize={20}
-                class="flex h-full flex-col border-r border-border bg-background">
-                <Card
-                  onselect={tabSelectHandler}
-                  isOpen
-                  flat
-                  tabs={isAdvancedMode ? editorTabs : [editorTabs[0]]}
-                  activeTabID={$stateStore.editorMode}
-                  isClosable={false}
-                  class="flex h-full w-full flex-col rounded-none border-0 bg-transparent">
-                  {#snippet actions()}{/snippet}
-                  <div class="relative flex-1 overflow-hidden">
-                    <Editor {isMobile} />
-                  </div>
-                </Card>
-              </Resizable.Pane>
-
-              <Resizable.Handle
-                withHandle
-                class="w-1.5 bg-border/50 transition-colors hover:bg-primary/50" />
-
-              <!-- Preview Area -->
-              <Resizable.Pane
-                order={2}
-                defaultSize={50}
-                minSize={20}
-                class="relative flex h-full flex-col overflow-hidden bg-background">
-                <View {panZoomState} shouldShowGrid={$stateStore.grid} />
-                <div class="absolute right-4 bottom-4 z-20 flex flex-col gap-2">
-                  <PanZoomToolbar {panZoomState} />
-                </div>
-              </Resizable.Pane>
-
-              {#if showAISidebar}
-                <Resizable.Handle withHandle class="w-1.5 bg-border/50" />
+            <!-- Editor & Preview + fixed AI sidebar -->
+            <div class="flex h-full w-full flex-1 overflow-hidden">
+              <Resizable.PaneGroup
+                direction="horizontal"
+                class="h-full flex-1"
+                autoSaveId="graphi-editor-panes">
                 <Resizable.Pane
-                  order={3}
-                  defaultSize={30}
+                  order={1}
+                  defaultSize={50}
                   minSize={20}
-                  maxSize={50}
-                  class="relative flex h-full flex-col border-l border-border bg-card">
+                  class="flex h-full flex-col border-r border-border bg-background">
+                  <Card
+                    onselect={tabSelectHandler}
+                    isOpen
+                    flat
+                    tabs={isAdvancedMode ? editorTabs : [editorTabs[0]]}
+                    activeTabID={$stateStore.editorMode}
+                    isClosable={false}
+                    class="flex h-full w-full flex-col rounded-none border-0 bg-transparent">
+                    {#snippet actions()}{/snippet}
+                    <div class="relative flex-1 overflow-hidden">
+                      <Editor {isMobile} />
+                    </div>
+                  </Card>
+                </Resizable.Pane>
+
+                <Resizable.Handle
+                  withHandle
+                  class="w-1.5 bg-border/50 transition-colors hover:bg-primary/50" />
+
+                <!-- Preview Area -->
+                <Resizable.Pane
+                  order={2}
+                  defaultSize={50}
+                  minSize={20}
+                  class="relative flex h-full flex-col overflow-hidden bg-background">
+                  <View {panZoomState} shouldShowGrid={$stateStore.grid} />
+                  <div class="absolute right-4 bottom-4 z-20 flex flex-col gap-2">
+                    <PanZoomToolbar {panZoomState} />
+                  </div>
+                </Resizable.Pane>
+              </Resizable.PaneGroup>
+
+              <!-- AI Sidebar: fixed width, not resizable -->
+              {#if showAISidebar}
+                <div
+                  class="relative flex h-full w-80 shrink-0 flex-col border-l border-border bg-card">
                   <AIChatSidebar
                     currentCode={$stateStore.code}
                     onInsertCode={(code) => updateCodeStore({ code })}
                     onReplaceCode={(code) => updateCodeStore({ code })}
                     onClose={() => (showAISidebar = false)} />
-                </Resizable.Pane>
+                </div>
               {/if}
-            </Resizable.PaneGroup>
+            </div>
           </div>
         </Resizable.Pane>
       </Resizable.PaneGroup>

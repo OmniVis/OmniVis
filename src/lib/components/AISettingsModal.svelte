@@ -12,8 +12,13 @@
     ExternalLink,
     Trash2,
     Sparkles,
-    ShieldCheck
+    ShieldCheck,
+    Zap
   } from 'lucide-svelte';
+  import GeminiIcon from '$lib/icons/GeminiIcon.svelte';
+  import ClaudeIcon from '$lib/icons/ClaudeIcon.svelte';
+  import OpenAIIcon from '$lib/icons/OpenAIIcon.svelte';
+  import AdessoIcon from '$lib/icons/AdessoIcon.svelte';
   import { cn } from '$lib/utils';
   import { toast } from 'svelte-sonner';
 
@@ -37,21 +42,26 @@
   let showKey = $state(false);
 
   const providers = [
-    { id: 'adesso', label: 'adesso AI Hub', icon: '☁️', url: 'https://adesso-ai-hub.3asabc.de/' },
-    { id: 'groq', label: 'Groq', icon: '⚡', url: 'https://console.groq.com/keys' },
+    {
+      id: 'adesso',
+      label: 'adesso AI Hub',
+      icon: AdessoIcon,
+      url: 'https://adesso-ai-hub.3asabc.de/'
+    },
+    { id: 'groq', label: 'Groq', icon: Zap, url: 'https://console.groq.com/keys' },
     {
       id: 'gemini',
       label: 'Google Gemini',
-      icon: '💎',
+      icon: GeminiIcon,
       url: 'https://aistudio.google.com/app/apikey'
     },
     {
       id: 'anthropic',
       label: 'Anthropic Claude',
-      icon: '🧠',
+      icon: ClaudeIcon,
       url: 'https://console.anthropic.com/settings/keys'
     },
-    { id: 'openai', label: 'OpenAI', icon: '🤖', url: 'https://platform.openai.com/api-keys' }
+    { id: 'openai', label: 'OpenAI', icon: OpenAIIcon, url: 'https://platform.openai.com/api-keys' }
   ] as const;
 
   $effect(() => {
@@ -93,8 +103,7 @@
     <div
       class="flex w-full flex-col border-b border-border/50 bg-muted/30 p-6 md:w-56 md:border-r md:border-b-0">
       <div class="mb-8 flex items-center gap-3">
-        <div
-          class="flex size-8 items-center justify-center rounded-xl bg-primary shadow-lg shadow-primary/20">
+        <div class="flex size-8 items-center justify-center bg-primary">
           <Settings class="size-4 text-primary-foreground" />
         </div>
         <h2 class="text-xs font-black tracking-widest text-foreground uppercase">Settings</h2>
@@ -104,9 +113,9 @@
         <button
           onclick={() => (activeTab = 'api')}
           class={cn(
-            'flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-[11px] font-bold tracking-wider uppercase transition-all',
+            'flex w-full items-center gap-3 px-4 py-2.5 text-[11px] font-bold tracking-wider uppercase transition-all',
             activeTab === 'api'
-              ? 'bg-foreground text-background shadow-lg'
+              ? 'bg-foreground text-background'
               : 'text-muted-foreground hover:bg-muted hover:text-foreground'
           )}>
           <Key class="size-4" />
@@ -115,9 +124,9 @@
         <button
           onclick={() => (activeTab = 'general')}
           class={cn(
-            'flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-[11px] font-bold tracking-wider uppercase transition-all',
+            'flex w-full items-center gap-3 px-4 py-2.5 text-[11px] font-bold tracking-wider uppercase transition-all',
             activeTab === 'general'
-              ? 'bg-foreground text-background shadow-lg'
+              ? 'bg-foreground text-background'
               : 'text-muted-foreground hover:bg-muted hover:text-foreground'
           )}>
           <Settings class="size-4" />
@@ -126,9 +135,9 @@
         <button
           onclick={() => (activeTab = 'about')}
           class={cn(
-            'flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-[11px] font-bold tracking-wider uppercase transition-all',
+            'flex w-full items-center gap-3 px-4 py-2.5 text-[11px] font-bold tracking-wider uppercase transition-all',
             activeTab === 'about'
-              ? 'bg-foreground text-background shadow-lg'
+              ? 'bg-foreground text-background'
               : 'text-muted-foreground hover:bg-muted hover:text-foreground'
           )}>
           <ShieldCheck class="size-4" />
@@ -165,12 +174,12 @@
                   <button
                     onclick={() => handleProviderSwitch(p.id)}
                     class={cn(
-                      'flex items-center gap-2 rounded-xl border px-4 py-2.5 text-left text-[10px] font-bold tracking-wider uppercase transition-all',
+                      'flex items-center gap-2 border px-4 py-2.5 text-left text-[10px] font-bold tracking-wider uppercase transition-all',
                       selectedProvider === p.id
-                        ? 'border-primary/50 bg-primary/5 text-primary shadow-sm'
-                        : 'border-border bg-background text-muted-foreground hover:border-muted-foreground/30'
+                        ? 'border-primary bg-primary/5 text-primary'
+                        : 'border-border bg-background text-muted-foreground hover:border-foreground/30 hover:text-foreground'
                     )}>
-                    <span>{p.icon}</span>
+                    <p.icon class="size-3.5 shrink-0" />
                     {p.label}
                   </button>
                 {/each}
@@ -198,7 +207,7 @@
                   type={showKey ? 'text' : 'password'}
                   bind:value={config.keys[selectedProvider]}
                   placeholder="sk-..."
-                  class="h-11 rounded-xl border-border bg-muted/30 px-4 py-3 font-mono text-[13px] transition-all focus:bg-background" />
+                  class="h-11 rounded-none border-border bg-muted/30 px-4 py-3 font-mono text-[13px] transition-all focus:bg-background" />
                 <button
                   type="button"
                   onclick={() => (showKey = !showKey)}
@@ -212,7 +221,7 @@
               </div>
             </div>
 
-            <div class="flex gap-3 rounded-xl border border-border/50 bg-muted/30 p-4">
+            <div class="flex gap-3 border border-border/50 bg-muted/30 p-4">
               <Info class="mt-0.5 size-4 shrink-0 text-primary" />
               <p class="text-[11px] leading-relaxed text-muted-foreground">
                 Keys are stored locally in your browser. They are never transmitted to our servers
@@ -229,7 +238,7 @@
               <div class="space-y-3">
                 <button
                   onclick={handleClearKeys}
-                  class="group flex w-full items-center justify-between rounded-2xl border border-border bg-background p-4 transition-all hover:border-destructive/20 hover:bg-destructive/5">
+                  class="group flex w-full items-center justify-between border border-border bg-background p-4 transition-all hover:border-destructive/20 hover:bg-destructive/5">
                   <div class="flex items-center gap-3">
                     <Trash2
                       class="size-4 text-muted-foreground transition-colors group-hover:text-destructive" />
@@ -251,7 +260,7 @@
           <div
             class="animate-in space-y-6 py-4 text-center duration-300 fade-in slide-in-from-bottom-2">
             <div
-              class="mb-2 inline-flex size-16 items-center justify-center rounded-[28px] border border-primary/20 bg-primary/10 shadow-sm">
+              class="mb-2 inline-flex size-16 items-center justify-center border border-primary/20 bg-primary/10">
               <Sparkles class="size-8 text-primary" />
             </div>
             <div>
@@ -278,7 +287,7 @@
         </Button>
         <Button
           onclick={handleSave}
-          class="rounded-xl bg-foreground px-8 py-2.5 text-[11px] font-bold tracking-widest text-background uppercase shadow-lg transition-all hover:bg-foreground/90">
+          class="rounded-none bg-foreground px-8 py-2.5 text-[11px] font-bold tracking-widest text-background uppercase transition-all hover:bg-foreground/90">
           Save Changes
         </Button>
       </div>
