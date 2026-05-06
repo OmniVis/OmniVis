@@ -35,7 +35,6 @@
   import Card from '$/components/Card/Card.svelte';
   import AIChatSidebar from '$/components/AIChatSidebar.svelte';
   import { scheduleAutoSave } from '$/util/historyStore';
-  import AIIcon from '~icons/material-symbols/auto-awesome';
   import CheckIcon from '~icons/material-symbols/check-circle-outline';
   import { Toggle } from '$/components/ui/toggle';
   import ShortcutsModal from '$/components/Layout/ShortcutsModal.svelte';
@@ -251,15 +250,6 @@
           <div class="mx-1 h-4 w-[1px] bg-border"></div>
           <Share />
         </div>
-
-        <Button
-          variant={showAISidebar ? 'secondary' : 'ghost'}
-          size="icon"
-          onclick={() => (showAISidebar = !showAISidebar)}
-          title="AI Assistant"
-          class="size-8 rounded-full text-indigo-600 hover:bg-indigo-50 hover:text-indigo-700 dark:text-indigo-400 dark:hover:bg-indigo-950/50">
-          <AIIcon class="size-5" />
-        </Button>
       </div>
     </header>
 
@@ -269,6 +259,8 @@
         <ActivityBar
           {isMobile}
           activeView={activeSideBarView}
+          {showAISidebar}
+          onAIToggle={() => (showAISidebar = !showAISidebar)}
           onViewChange={(view) => {
             if (view === 'shortcuts') {
               isShortcutsOpen = true;

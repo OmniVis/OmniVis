@@ -7,13 +7,16 @@
   import HistoryIcon from '~icons/material-symbols/history';
   import PaletteIcon from '~icons/material-symbols/palette';
   import KeyboardIcon from '~icons/material-symbols/keyboard-outline';
+  import AIIcon from '~icons/material-symbols/auto-awesome';
 
   interface Props {
     activeView: string;
     onViewChange: (view: string) => void;
+    showAISidebar?: boolean;
+    onAIToggle?: () => void;
   }
 
-  let { activeView, onViewChange }: Props = $props();
+  let { activeView, onViewChange, showAISidebar = false, onAIToggle }: Props = $props();
 
   const primaryActions = [
     { id: 'explorer', icon: FolderIcon, label: 'Explorer' },
@@ -45,6 +48,22 @@
         <action.icon class="mx-auto h-5 w-5" />
       </button>
     {/each}
+
+    <!-- Divider -->
+    <div class="my-1 h-px w-8 bg-border"></div>
+
+    <!-- AI Assistant toggle -->
+    <button
+      class={cn(
+        'rounded-lg p-2 transition-all',
+        showAISidebar
+          ? 'bg-primary/10 text-primary shadow-sm'
+          : 'w-full text-muted-foreground hover:bg-muted/50 hover:text-primary'
+      )}
+      onclick={onAIToggle}
+      title="AI Assistant">
+      <AIIcon class="mx-auto h-5 w-5" />
+    </button>
   </div>
 
   <div class="mt-auto flex flex-col items-center gap-3">
