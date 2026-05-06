@@ -68,6 +68,8 @@
     --ring: #4f46e5;
     /* indigo-600 */
     --radius: 0.75rem;
+    --surface: #f8f9fa;
+    --surface-elevated: #f1f3f5;
   }
 
   .dark {
@@ -99,6 +101,8 @@
     --border-dark: #0f172a;
     --input: #1e293b;
     --ring: #6366f1;
+    --surface: #0f172a;
+    --surface-elevated: #1e293b;
   }
 }
 
@@ -131,6 +135,8 @@
   --color-destructive-foreground: var(--destructive-foreground);
   --color-ring: var(--ring);
   --color-radius: var(--radius);
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
