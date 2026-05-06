@@ -3,7 +3,7 @@
 	"name": "Mermaid Live Editor",
 	"icons": [
 		{
-			"src": "/favicon.png",
+			"src": "graphi_favicon.png",
 			"type": "image/png",
 			"sizes": "512x512"
 		}

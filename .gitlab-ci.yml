@@ -16,7 +16,7 @@ build-app:
   stage: build-app
   image: node:20-slim
   variables:
-    BASE_PATH: '/graphi'
+    BASE_PATH: '/edit'
   before_script:
     - corepack enable pnpm
     - pnpm config set store-dir .pnpm-store

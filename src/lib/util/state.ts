@@ -23,17 +23,17 @@ C -->| One | D[Laptop]
 C -->| Two | E[iPhone]
 C -->| Three | F[fa: fa - car Car]
 `,
+  exportBackground: '#ffffff',
   grid: true,
+  isAdvancedMode: true,
   mermaid: formatJSON({
     theme: 'default'
   }),
   panZoom: true,
+  performanceMode: false,
   rough: false,
   updateDiagram: true,
-  viewMode: 'code',
-  isAdvancedMode: true,
-  exportBackground: '#ffffff',
-  performanceMode: false
+  viewMode: 'code'
 };
 
 const urlParseFailedState = `flowchart TD
@@ -57,11 +57,11 @@ export const currentState: ValidatedState = (() => {
     editorMode: state.editorMode ?? 'code',
     error: undefined,
     errorMarkers: [],
-    serialized: serializeState(state),
-    viewMode: state.viewMode ?? 'code',
-    isAdvancedMode: state.isAdvancedMode ?? true,
     exportBackground: state.exportBackground ?? '#ffffff',
-    performanceMode: state.performanceMode ?? false
+    isAdvancedMode: state.isAdvancedMode ?? true,
+    performanceMode: state.performanceMode ?? false,
+    serialized: serializeState(state),
+    viewMode: state.viewMode ?? 'code'
   };
 })();
 
@@ -73,11 +73,11 @@ const processState = async (state: State) => {
     editorMode: state.editorMode ?? 'code',
     error: undefined,
     errorMarkers: [],
-    serialized: '',
-    viewMode: state.viewMode ?? 'code',
-    isAdvancedMode: state.isAdvancedMode ?? true,
     exportBackground: state.exportBackground ?? '#ffffff',
-    performanceMode: state.performanceMode ?? false
+    isAdvancedMode: state.isAdvancedMode ?? true,
+    performanceMode: state.performanceMode ?? false,
+    serialized: '',
+    viewMode: state.viewMode ?? 'code'
   };
   // No changes should be done to fields part of `state`.
   try {
@@ -98,7 +98,6 @@ const processState = async (state: State) => {
   } catch (error) {
     processed.error = error as Error;
     errorDebug();
-    console.error(error);
     if ('hash' in error) {
       try {
         let errorString = processed.error.toString();
@@ -324,7 +323,6 @@ export const toggleDarkTheme = (dark: boolean): void => {
 
 export const initURLSubscription = (): void => {
   const updateHash = debounce((hash) => {
-    // eslint-disable-next-line svelte/no-navigation-without-resolve
     replaceState(`#${hash}`, {});
   }, 250);
 

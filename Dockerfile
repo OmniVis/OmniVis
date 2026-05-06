@@ -3,10 +3,10 @@ FROM nginx:alpine
 # Remove default nginx static assets
 RUN rm -rf /usr/share/nginx/html/*
 
-# Copy the pre-built SPA artifacts into the subpath that matches BASE_PATH=/graphi.
+# Copy the pre-built SPA artifacts into the subpath that matches BASE_PATH=/edit.
 # The target/ directory is produced by the build-app CI stage and passed into this
 # job's workspace as a GitLab CI artifact — no Node.js build step needed here.
-COPY target /usr/share/nginx/html/graphi
+COPY target /usr/share/nginx/html/edit
 RUN chmod -R a+rX /usr/share/nginx/html
 
 # SPA-aware nginx config:
