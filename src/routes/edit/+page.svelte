@@ -36,7 +36,6 @@
   import AIChatSidebar from '$/components/AIChatSidebar.svelte';
   import { scheduleAutoSave } from '$/util/historyStore';
   import CheckIcon from '~icons/material-symbols/check-circle-outline';
-  import { Toggle } from '$/components/ui/toggle';
   import ShortcutsModal from '$/components/Layout/ShortcutsModal.svelte';
 
   const panZoomState = new PanZoomState();
@@ -166,27 +165,29 @@
   <div class="flex h-screen w-screen flex-col overflow-hidden bg-background text-foreground">
     <!-- Clean Header -->
     <header
-      class="z-50 flex h-12 shrink-0 items-center justify-between border-b border-border bg-background px-4 transition-all duration-300">
+      class="z-50 flex h-12 shrink-0 items-center justify-between border-b border-border bg-background px-4">
       <div class="flex items-center gap-3">
         <div class="flex items-center gap-2">
           <img
             src="{base}/branding/graphi-logomark-on-{$mode === 'dark' ? 'dark' : 'light'}.png"
             alt="Graphi Logo"
             class="h-7 w-auto object-contain" />
-          <span class="flex items-center gap-2 font-bold tracking-tight">
+          <span class="flex items-center gap-2 text-[13px] font-black tracking-widest uppercase">
             Graphi
-            <span class="flex items-center gap-1 text-xs font-normal text-muted-foreground italic">
-              /
+          </span>
+          {#if $activeVirtualFileId || $activeFileHandle}
+            <span class="text-border">/</span>
+            <span class="flex items-center gap-1 text-xs font-normal text-muted-foreground">
               {#if $activeVirtualFileId}
                 {siteFiles.find((f) => f.id === $activeVirtualFileId)?.name || 'Untitled Diagram'}
               {:else}
                 {$activeFileHandle?.name || 'Untitled Diagram'}
               {/if}
               {#if isDirty}
-                <span class="ml-0.5 text-[10px] text-primary">●</span>
+                <span class="text-[10px] text-primary">●</span>
               {/if}
             </span>
-          </span>
+          {/if}
         </div>
 
         <div class="mx-2 h-4 w-[1px] bg-border"></div>
@@ -216,38 +217,35 @@
         </div>
 
         <!-- Mode Toggle -->
-        <label
-          class="flex cursor-pointer items-center gap-2 rounded-md border border-border bg-muted/20 px-2 py-1 text-xs font-semibold transition-colors hover:bg-muted/40">
-          <span class="text-muted-foreground {isAdvancedMode ? '' : 'text-foreground'}"
-            >Simple</span>
-          <Toggle
-            pressed={isAdvancedMode}
-            onPressedChange={toggleMode}
-            size="sm"
-            class="h-5 w-8 rounded-full p-0 data-[state=on]:bg-primary">
-            <div
-              class="h-3 w-3 rounded-full bg-white transition-transform {isAdvancedMode
-                ? 'translate-x-1.5'
-                : '-translate-x-1.5'} shadow-sm">
-            </div>
-          </Toggle>
-          <span class="text-muted-foreground {isAdvancedMode ? 'text-foreground' : ''}"
-            >Advanced</span>
-        </label>
+        <div class="flex items-center border border-border">
+          <button
+            class="h-7 cursor-pointer border-r border-border px-3 text-[10px] font-bold tracking-wider uppercase transition-colors {!isAdvancedMode
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-background text-muted-foreground hover:bg-muted/40'}"
+            onclick={() => toggleMode(false)}>
+            Simple
+          </button>
+          <button
+            class="h-7 cursor-pointer px-3 text-[10px] font-bold tracking-wider uppercase transition-colors {isAdvancedMode
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-background text-muted-foreground hover:bg-muted/40'}"
+            onclick={() => toggleMode(true)}>
+            Advanced
+          </button>
+        </div>
 
         <!-- Actions -->
-        <div
-          class="flex items-center gap-1 rounded-md border border-border bg-muted/20 p-1 shadow-sm">
+        <div class="flex items-center border border-border">
           <Button
             variant="default"
             size="sm"
             onclick={handleSaveDiagram}
             title="Save to File"
-            class="h-7 gap-1.5 px-3 text-xs font-bold">
+            class="h-7 gap-1.5 rounded-none px-3 text-[10px] font-bold tracking-wider uppercase">
             <SaveIcon class="size-3.5" />
             Save
           </Button>
-          <div class="mx-1 h-4 w-[1px] bg-border"></div>
+          <div class="h-7 w-[1px] bg-border"></div>
           <Share />
         </div>
       </div>
@@ -333,10 +331,11 @@
                 order={1}
                 defaultSize={50}
                 minSize={20}
-                class="flex h-full flex-col border-r border-border bg-background/50">
+                class="flex h-full flex-col border-r border-border bg-background">
                 <Card
                   onselect={tabSelectHandler}
                   isOpen
+                  flat
                   tabs={isAdvancedMode ? editorTabs : [editorTabs[0]]}
                   activeTabID={$stateStore.editorMode}
                   isClosable={false}
@@ -352,20 +351,14 @@
                 withHandle
                 class="w-1.5 bg-border/50 transition-colors hover:bg-primary/50" />
 
-              <!-- Preview Area styled like mockup -->
+              <!-- Preview Area -->
               <Resizable.Pane
                 order={2}
                 defaultSize={50}
                 minSize={20}
-                class="theme-transition relative flex h-full flex-col items-center justify-center overflow-hidden bg-muted/5">
-                <div class="z-10 flex h-full w-full items-center justify-center p-4 md:p-8">
-                  <div
-                    class="relative flex h-full w-full flex-col overflow-hidden rounded-xl border border-border bg-background transition-all duration-300">
-                    <View {panZoomState} shouldShowGrid={$stateStore.grid} />
-                  </div>
-                </div>
-
-                <div class="absolute right-6 bottom-6 z-20 flex flex-col gap-2">
+                class="relative flex h-full flex-col overflow-hidden bg-background">
+                <View {panZoomState} shouldShowGrid={$stateStore.grid} />
+                <div class="absolute right-4 bottom-4 z-20 flex flex-col gap-2">
                   <PanZoomToolbar {panZoomState} />
                 </div>
               </Resizable.Pane>

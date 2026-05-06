@@ -31,8 +31,10 @@
         role="tab"
         variant="ghost"
         class={[
-          'px-2',
-          currentTabId === tab.id && 'rounded-b-none border-b-2 border-b-primary-foreground/50'
+          'h-8 rounded-none px-3 text-[11px] font-semibold tracking-wide uppercase',
+          currentTabId === tab.id
+            ? 'border-b-2 border-b-primary text-primary'
+            : 'text-muted-foreground hover:text-foreground'
         ]}
         onclick={toggleTabs(tab)}
         onkeypress={toggleTabs(tab)}>

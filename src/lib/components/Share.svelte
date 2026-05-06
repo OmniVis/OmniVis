@@ -6,7 +6,9 @@
 </script>
 
 <Dialog.Root>
-  <Dialog.Trigger class={buttonVariants({ variant: 'ghost', size: 'icon' })} title="Share">
+  <Dialog.Trigger
+    class="{buttonVariants({ variant: 'ghost', size: 'icon' })} h-7 w-7 !rounded-none"
+    title="Share">
     <ShareIcon class="size-5" />
   </Dialog.Trigger>
   <Dialog.Content>

@@ -23,6 +23,7 @@
     actions?: Snippet;
     children: Snippet;
     class?: string;
+    flat?: boolean;
   }
 
   let {
@@ -36,7 +37,8 @@
     onselect,
     actions,
     children,
-    class: className
+    class: className,
+    flat = false
   }: Props = $props();
 
   const toggleCardOpen = () => {
@@ -59,8 +61,10 @@
     role="toolbar"
     tabindex="0"
     class={[
-      'flex h-11 flex-none cursor-pointer items-center justify-between bg-muted p-2 whitespace-nowrap',
-      isTabsShown && 'pb-1'
+      flat
+        ? 'flex h-9 flex-none cursor-pointer items-center justify-between border-b border-border bg-background px-3 whitespace-nowrap'
+        : 'flex h-11 flex-none cursor-pointer items-center justify-between bg-muted p-2 whitespace-nowrap',
+      isTabsShown && !flat && 'pb-1'
     ]}
     onclick={toggleCardOpen}
     onkeypress={toggleCardOpen}>

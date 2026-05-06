@@ -38,7 +38,7 @@
     {#each primaryActions as action (action.id)}
       <button
         class={cn(
-          'rounded-lg p-2 transition-all',
+          'rounded-none p-2 transition-all',
           activeView === action.id
             ? 'bg-primary/10 text-primary shadow-sm'
             : 'w-full text-muted-foreground hover:bg-muted/50 hover:text-primary'
@@ -55,7 +55,7 @@
     <!-- AI Assistant toggle -->
     <button
       class={cn(
-        'rounded-lg p-2 transition-all',
+        'rounded-none p-2 transition-all',
         showAISidebar
           ? 'bg-primary/10 text-primary shadow-sm'
           : 'w-full text-muted-foreground hover:bg-muted/50 hover:text-primary'
@@ -70,7 +70,7 @@
     {#each secondaryActions as action (action.id)}
       <button
         class={cn(
-          'rounded-lg p-2 transition-all',
+          'rounded-none p-2 transition-all',
           activeView === action.id
             ? 'w-full bg-primary/10 text-primary shadow-sm'
             : 'w-full text-muted-foreground hover:bg-muted/50 hover:text-primary'
