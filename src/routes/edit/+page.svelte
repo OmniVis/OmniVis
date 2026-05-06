@@ -257,7 +257,6 @@
       <!-- Only show ActivityBar in Advanced Mode -->
       {#if isAdvancedMode}
         <ActivityBar
-          {isMobile}
           activeView={activeSideBarView}
           {showAISidebar}
           onAIToggle={() => (showAISidebar = !showAISidebar)}
