@@ -33,7 +33,7 @@
 </script>
 
 <aside
-  class="theme-transition z-40 flex h-full w-12 shrink-0 flex-col items-center justify-between border-r border-border bg-background py-4">
+  class="theme-transition z-40 flex h-full w-12 shrink-0 flex-col items-center justify-between border-r border-border bg-surface py-4">
   <div class="flex flex-col items-center gap-3">
     {#each primaryActions as action (action.id)}
       <button
