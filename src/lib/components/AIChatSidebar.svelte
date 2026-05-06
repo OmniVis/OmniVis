@@ -76,6 +76,12 @@
     }
   }
 
+  function autoResize(e: Event) {
+    const el = e.target as HTMLTextAreaElement;
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+  }
+
   function replaceCode(code: string) {
     if (onReplaceCode) {
       onReplaceCode(code);
@@ -183,12 +189,16 @@
 </script>
 
 <div
-  class="flex h-full w-full max-w-[420px] min-w-[200px] flex-col border-l border-border bg-card text-sm">
+  class="relative flex h-full w-full max-w-[420px] min-w-[200px] flex-col overflow-hidden bg-surface text-sm">
   <!-- Header -->
-  <div class="flex items-center justify-between border-b border-border bg-muted/30 p-2">
-    <div class="flex items-center gap-1.5 px-1">
-      <SparklesIcon class="size-4 text-primary" />
-      <h3 class="text-[10px] font-bold tracking-[0.2em] text-muted-foreground uppercase">
+  <div
+    class="sticky top-0 z-20 flex items-center justify-between border-b border-border/50 bg-surface/80 px-4 py-3 backdrop-blur-md">
+    <div class="flex items-center gap-2">
+      <div
+        class={isLoading
+          ? 'size-2 animate-pulse rounded-full bg-primary ring-4 ring-primary/20'
+          : 'size-2 rounded-full bg-border'} />
+      <h3 class="text-[11px] font-black tracking-[0.2em] text-muted-foreground uppercase">
         AI Assistant
       </h3>
     </div>
@@ -213,26 +223,27 @@
   <AISettingsModal bind:open={showSettingsModal} />
 
   <!-- Messages -->
-  <div class="flex flex-1 flex-col gap-3 overflow-y-auto p-3">
+  <div class="flex flex-1 flex-col gap-4 overflow-y-auto px-4 pt-4 pb-40">
     {#if messages.length === 0}
       <div
-        class="flex h-full flex-col items-center justify-center p-8 text-center text-muted-foreground">
+        class="flex h-full flex-col items-center justify-center space-y-4 px-6 py-12 text-center opacity-70">
         <div
-          class="mb-2 flex flex-col items-center gap-2 text-[15px] font-bold tracking-tight text-foreground">
-          <div
-            class="flex size-12 items-center justify-center rounded-2xl bg-primary/10 shadow-inner">
-            <SparklesIcon class="size-6 text-primary" />
-          </div>
-          Text to Diagram
+          class="flex size-12 items-center justify-center rounded-[22px] border border-border bg-background shadow-sm">
+          <SparklesIcon class="size-6 text-primary" />
         </div>
-        <p class="mb-6 text-xs leading-relaxed">
-          Describe what you want and I'll generate the Mermaid code.
-        </p>
+        <div>
+          <p class="text-sm font-black tracking-widest text-foreground uppercase">
+            Text to Diagram
+          </p>
+          <p class="mt-2 max-w-[200px] text-[11px] leading-relaxed text-muted-foreground">
+            Describe what you want and I'll generate Mermaid code.
+          </p>
+        </div>
 
         <div class="flex flex-wrap justify-center gap-2">
           {#each ['Login flow', 'Blog ER diagram', 'CI/CD pipeline'] as label (label)}
             <button
-              class="rounded-full border border-border bg-muted/30 px-3 py-1.5 text-xs text-foreground transition-all hover:border-primary/30 hover:bg-primary/10"
+              class="rounded-full border border-border bg-background/50 px-3 py-1.5 text-[11px] font-bold text-foreground transition-all hover:border-primary/30 hover:bg-primary/10"
               onclick={() => {
                 if (label === 'Login flow') inputText = 'Create a login flow diagram';
                 if (label === 'Blog ER diagram')
@@ -261,7 +272,7 @@
         <div class="min-w-0 flex-1">
           {#if msg.role === 'user'}
             <div
-              class="max-w-[90%] rounded-2xl rounded-tl-sm bg-primary px-3.5 py-2 text-xs leading-relaxed break-words text-primary-foreground shadow-sm">
+              class="max-w-[85%] rounded-2xl rounded-tr-sm bg-muted px-4 py-2.5 text-xs leading-relaxed break-words text-foreground shadow-sm">
               {msg.content}
             </div>
           {:else}
@@ -373,27 +384,40 @@
     {/if}
   </div>
 
-  <!-- Input -->
-  <div class="flex items-end gap-2 border-t border-border bg-background/50 p-3 backdrop-blur-md">
-    <textarea
-      class="flex-1 resize-none rounded-xl border border-border bg-background px-3 py-2 text-xs text-foreground shadow-sm transition-all outline-none placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/15"
-      placeholder="Wait what diagram should i compose?"
-      bind:value={inputText}
-      onkeydown={handleKeydown}
-      rows="2"></textarea>
-    <Button
-      size="icon"
-      class="mb-0.5 size-9 shrink-0 rounded-xl bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
-      onclick={sendMessage}
-      disabled={isLoading || !inputText.trim()}>
-      {#if isLoading}
-        <div
-          class="size-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent">
+  <!-- Input: absolute sticky bottom with gradient -->
+  <div
+    class="absolute right-0 bottom-0 left-0 z-30 bg-gradient-to-t from-surface via-surface to-transparent px-4 pt-8 pb-4">
+    <div
+      class="rounded-[24px] border border-border/80 bg-background p-3 shadow-[0_4px_20px_rgb(0,0,0,0.06)] transition-all duration-300 focus-within:border-primary/30 focus-within:shadow-[0_8px_30px_rgb(0,0,0,0.10)]">
+      <textarea
+        class="max-h-[120px] min-h-[40px] w-full resize-none bg-transparent px-2 py-1 text-sm leading-relaxed text-foreground outline-none placeholder:text-muted-foreground disabled:opacity-50"
+        placeholder="Describe a diagram..."
+        bind:value={inputText}
+        onkeydown={handleKeydown}
+        oninput={autoResize}
+        rows={1}
+        disabled={isLoading}></textarea>
+
+      <!-- Bottom row: label + send button -->
+      <div class="mt-2 flex items-center justify-between px-1">
+        <div class="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+          Mermaid AI
         </div>
-      {:else}
-        <SendIcon class="size-4" />
-      {/if}
-    </Button>
+
+        <button
+          onclick={sendMessage}
+          disabled={!inputText.trim() || isLoading}
+          class="flex size-8 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm transition-all hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40">
+          {#if isLoading}
+            <div
+              class="size-3.5 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent">
+            </div>
+          {:else}
+            <SendIcon class="size-4" />
+          {/if}
+        </button>
+      </div>
+    </div>
   </div>
 </div>
 
