@@ -1,195 +1,371 @@
 <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>OmniVis — High-Performance Creator Command Center</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700;800;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+    
+    <!-- Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,200,0,0" rel="stylesheet" />
 
-<html lang="en"><head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>OmniVis - The Integrated Hub for High-Performance Creators</title>
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700;800&amp;family=Inter:wght@400;600&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<script id="tailwind-config">
+    <!-- Tailwind Configured for OmniVis High-Contrast Design Tokens -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
         tailwind.config = {
-            darkMode: "class",
             theme: {
                 extend: {
-                    "colors": {
-                        "inverse-surface": "#213145",
-                        "on-secondary": "#ffffff",
-                        "surface": "#f8f9ff",
-                        "surface-container-low": "#eff4ff",
-                        "on-tertiary-fixed-variant": "#444749",
-                        "on-secondary-fixed-variant": "#474747",
-                        "tertiary-fixed": "#e0e3e5",
-                        "surface-container": "#e5eeff",
-                        "on-background": "#0b1c30",
-                        "primary-fixed": "#dae1ff",
-                        "tertiary": "#565a5b",
-                        "outline": "#727687",
-                        "on-primary-fixed-variant": "#003fa4",
-                        "on-surface-variant": "#424656",
-                        "on-surface": "#0b1c30",
-                        "on-primary-container": "#f8f7ff",
-                        "error": "#ba1a1a",
-                        "surface-dim": "#cbdbf5",
-                        "background": "#f8f9ff",
-                        "on-tertiary-fixed": "#191c1e",
-                        "tertiary-fixed-dim": "#c4c7c9",
-                        "on-tertiary-container": "#f6f8fa",
-                        "secondary": "#5e5e5e",
-                        "inverse-on-surface": "#eaf1ff",
-                        "surface-bright": "#f8f9ff",
-                        "on-secondary-container": "#646464",
-                        "primary": "#0050cb",
-                        "primary-container": "#0066ff",
-                        "surface-container-high": "#dce9ff",
-                        "surface-container-lowest": "#ffffff",
-                        "on-secondary-fixed": "#1b1b1b",
-                        "secondary-container": "#e2e2e2",
-                        "on-error-container": "#93000a",
-                        "primary-fixed-dim": "#b3c5ff",
-                        "on-primary": "#ffffff",
-                        "error-container": "#ffdad6",
-                        "outline-variant": "#c2c6d8",
-                        "secondary-fixed": "#e2e2e2",
-                        "surface-variant": "#d3e4fe",
-                        "on-error": "#ffffff",
-                        "surface-container-highest": "#d3e4fe",
-                        "on-tertiary": "#ffffff",
-                        "secondary-fixed-dim": "#c6c6c6",
-                        "surface-tint": "#0054d6",
-                        "on-primary-fixed": "#001849",
-                        "inverse-primary": "#b3c5ff",
-                        "tertiary-container": "#6f7274"
+                    colors: {
+                        primary: '#0050cb',      // Vibrant Electric Blue
+                        'primary-hover': '#003fa4',
+                        secondary: '#0b1c30',    // Deep Ink / Absolute Black
+                        bgNeutral: '#F5F7F9',     // Cloud Grey
+                        borderNeutral: '#E2E8F0', // Soft structural boundaries
                     },
-                    "borderRadius": {
-                        "DEFAULT": "0.125rem",
-                        "lg": "0.25rem",
-                        "xl": "0.5rem",
-                        "full": "0.75rem"
+                    fontFamily: {
+                        display: ['Hanken Grotesk', 'sans-serif'],
+                        body: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
                     },
-                    "spacing": {
-                        "max-width": "1440px",
-                        "margin-desktop": "40px",
-                        "gutter-md": "24px",
-                        "margin-mobile": "16px",
-                        "unit": "4px",
-                        "gutter-sm": "16px"
-                    },
-                    "fontFamily": {
-                        "button": ["Inter"],
-                        "body-md": ["Inter"],
-                        "body-lg": ["Inter"],
-                        "headline-md": ["Hanken Grotesk"],
-                        "display": ["Hanken Grotesk"],
-                        "headline-lg-mobile": ["Hanken Grotesk"],
-                        "headline-lg": ["Hanken Grotesk"],
-                        "label-sm": ["JetBrains Mono"]
-                    },
-                    "fontSize": {
-                        "button": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
-                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
-                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
-                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
-                        "display": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800" }],
-                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "700" }],
-                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
-                        "label-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500" }]
+                    borderRadius: {
+                        'soft-sm': '4px',
+                        'soft-lg': '8px',
                     }
                 }
             }
         }
     </script>
-<style>
-        body { background-color: #f8f9ff; color: #0b1c30; }
-        .material-symbols-outlined { font-family: 'Material Symbols Outlined'; font-weight: normal; font-style: normal; font-size: 24px; line-height: 1; letter-spacing: normal; text-transform: none; display: inline-block; white-space: nowrap; word-wrap: normal; direction: ltr; -webkit-font-feature-settings: 'liga'; -webkit-font-smoothing: antialiased; }
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F5F7F9;
+        }
+        .grid-line-x {
+            background-image: linear-gradient(to right, #E2E8F0 1px, transparent 1px);
+            background-size: 24px 100%;
+        }
+        .grid-line-y {
+            background-image: linear-gradient(to bottom, #E2E8F0 1px, transparent 1px);
+            background-size: 100% 24px;
+        }
+        .glow-active:hover {
+            box-shadow: 0 0 24px rgba(0, 80, 203, 0.08);
+            border-color: #0050cb;
+        }
     </style>
 </head>
-<body class="antialiased min-h-screen flex flex-col font-body-md text-body-md">
-<!-- TopAppBar -->
-<header class="bg-surface border-b border-outline-variant sticky top-0 z-50 w-full">
-<div class="flex justify-between items-center w-full px-margin-mobile md:px-margin-desktop py-4 max-w-max-width mx-auto">
-<div class="flex items-center gap-8">
-<a class="font-display text-headline-md font-extrabold text-on-background flex items-center gap-2" href="#">
-<img alt="OmniVis Logo" class="h-8 object-contain hidden" src="https://lh3.googleusercontent.com/aida/ADBb0uiQzAsaTvif3NOilJxVuDk5GiIRJPiOEH4T69Mt2yUmsioWc0LbXjf5vc2v4ulHL-LFAzz9grPQo51fITVlSqZoktV7Q1_tVkD1nmqU62WdLx0-yKqmsgnPCj1Xv-wULHSGZ55OMdyxTs9qU1Vv7d7aXMwgKfUKw3YH4wHPE3GlNoOQCLbHNCEwcCOlFZMl2zYsEdIwFFs5i5afYsaX73j7RTrq3SbvP0GU8eFKTShQqn8lyOGFBplxc1KX"/>
-<span>OmniVis</span>
-</a>
-<nav class="hidden md:flex gap-6">
-<a class="text-primary font-bold border-b-2 border-primary pb-1" href="#">Ecosystem</a>
-<a class="text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low transition-colors duration-200 px-2 py-1 rounded" href="#">Solutions</a>
-<a class="text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low transition-colors duration-200 px-2 py-1 rounded" href="#">Documentation</a>
-<a class="text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low transition-colors duration-200 px-2 py-1 rounded" href="#">About</a>
-</nav>
-</div>
-<div class="flex items-center gap-4">
-<a class="hidden md:block font-button text-button text-on-surface-variant hover:text-on-surface" href="#">Login</a>
-<a class="font-button text-button bg-on-background text-on-primary px-4 py-2 rounded transition-all hover:bg-tertiary" href="#">Enter the Hub</a>
-</div>
-</div>
-</header>
-<main class="flex-grow">
-<!-- Hero Section -->
-<section class="w-full px-margin-mobile md:px-margin-desktop py-24 md:py-32 max-w-max-width mx-auto flex flex-col items-center text-center gap-8">
-<img alt="OmniVis Hero Logo" class="h-24 md:h-32 object-contain mb-4" src="https://lh3.googleusercontent.com/aida/ADBb0uiQzAsaTvif3NOilJxVuDk5GiIRJPiOEH4T69Mt2yUmsioWc0LbXjf5vc2v4ulHL-LFAzz9grPQo51fITVlSqZoktV7Q1_tVkD1nmqU62WdLx0-yKqmsgnPCj1Xv-wULHSGZ55OMdyxTs9qU1Vv7d7aXMwgKfUKw3YH4wHPE3GlNoOQCLbHNCEwcCOlFZMl2zYsEdIwFFs5i5afYsaX73j7RTrq3SbvP0GU8eFKTShQqn8lyOGFBplxc1KX"/>
-<h1 class="font-display text-display text-on-background max-w-4xl">The Integrated Hub for High-Performance Creators.</h1>
-<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">Synthesizing the power of Graphi, Launchpad, and Slidi into one all-encompassing visual ecosystem.</p>
-<div class="mt-8">
-<a class="font-button text-button bg-primary text-on-primary px-8 py-4 rounded-lg shadow-sm hover:bg-primary-container transition-all text-lg" href="#">Enter the Hub</a>
-</div>
-</section>
-<!-- Ecosystem Section -->
-<section class="w-full px-margin-mobile md:px-margin-desktop py-24 bg-surface-container-lowest max-w-max-width mx-auto">
-<div class="mb-16 text-center">
-<h2 class="font-headline-lg text-headline-lg text-on-background">Our Ecosystem</h2>
-<p class="font-body-md text-body-md text-on-surface-variant mt-4">Precision tools for every phase of creation.</p>
-</div>
-<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter-md">
-<!-- Graphi Card -->
-<a href="/graphi/" class="bg-surface border border-outline-variant rounded-xl p-8 flex flex-col items-center text-center gap-6 hover:border-primary transition-colors duration-300">
-<div class="h-32 w-full flex items-center justify-center bg-surface-container-low rounded-lg p-4">
-<img alt="Graphi Logo" class="max-h-full max-w-full object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBH7T9Gp4_LbAoeMep-qtOwvuaE70InA9kwYIC6pAt-XoPyt837KU4Fft3W5_Ifi5C7PpV3fdnxKp62xCK0AO6NZgqQ6VmP2eZUSJ9NASsLRnDB0V6gb6ZL6Nl0-2kS9JUg3WYHMcK1_h2X5d_zgGwhULblCFWkM3xPdiPQWzvGNUsgVkWycQsnDWboRVAXgDLaEVDVqS_mMUCjJnq3Y222UDfRXUiSSRNrrrciQ4qC0Emhb9JM_Os2r-ZQJYwUnbgbFxOWvJZOj6i5"/>
-</div>
-<div>
-<h3 class="font-headline-md text-headline-md text-on-background mb-2">Graphi</h3>
-<p class="font-body-md text-body-md text-on-surface-variant">Advanced Woven Visualization</p>
-</div>
-</div>
-<!-- Launchpad Card -->
-<a href="/" class="bg-surface border border-outline-variant rounded-xl p-8 flex flex-col items-center text-center gap-6 hover:border-primary transition-colors duration-300">
-<div class="h-32 w-full flex items-center justify-center bg-surface-container-low rounded-lg p-4">
-<img alt="Launchpad Logo" class="max-h-full max-w-full object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC1Ltg52JDtq4GowUIa6fXge_oQVCq2r7Kn13ikSe-VPxhY8b2kFzwrOf7AdKnRKGGoVSuH-8p-9P7ELtD4TNGTKz7v_7JmI7PWpKgtDLj_2lO5tCECbasaISajlH-k7Kx7SgGEbV43ecFAkLPsLV9bRZPMwgGCKQ3OswNURy7XjhULE8lsfDk7cIKL9dwq_k4fdUucI2Tjb8pQtAhEStFP2Y6DAZOh1Uebnemj68h-PfI4s2QoiZaOvnLe38vKzPcBF1OpryBJcO-O"/>
-</div>
-<div>
-<h3 class="font-headline-md text-headline-md text-on-background mb-2">Launchpad</h3>
-<p class="font-body-md text-body-md text-on-surface-variant">AI-Powered Project Acceleration</p>
-</div>
-</div>
-<!-- Slidi Card -->
-<a href="/slidi/" class="bg-surface border border-outline-variant rounded-xl p-8 flex flex-col items-center text-center gap-6 hover:border-primary transition-colors duration-300">
-<div class="h-32 w-full flex items-center justify-center bg-surface-container-low rounded-lg p-4">
-<img alt="Slidi Logo" class="max-h-full max-w-full object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDCrecRpBH18GbW5QFzChexp73ewF8A22YqLibDDnypn3yqb4BN32MipgA1eHm1wv-ZcAl2LcbjgWutjKaUfZFGR2D1i7eJMvCsv2NEK4n0Ih_yKzMOR2j_6t0bGT7mDUuMcMxRPusidBw4ga1AeqejN31cmeEuT1V6Ki7UN2xrk9CS0ysxaPT413oSXdr7IgjXi_mCOR0zIHw4QtK6HI2ESmQzGAqHAiq6mOIFTuZUxbsTNtcMz_es61uNrB2BJXSRSvpdn6OYHAgv"/>
-</div>
-<div>
-<h3 class="font-headline-md text-headline-md text-on-background mb-2">Slidi</h3>
-<p class="font-body-md text-body-md text-on-surface-variant">Fluid Dynamic Presentations</p>
-</div>
-</div>
-</div>
-</section>
-</main>
-<!-- Footer -->
-<footer class="bg-surface-container border-t border-outline-variant mt-auto">
-<div class="flex flex-col md:flex-row justify-between items-center w-full px-margin-mobile md:px-margin-desktop py-gutter-md max-w-max-width mx-auto gap-4">
-<div class="font-display text-headline-sm font-bold text-on-surface">OmniVis</div>
-<div class="font-body-md text-body-md text-on-surface-variant text-center">
-                © 2024 OmniVis. The Integrated Hub for High-Performance Creators.
+<body class="min-h-screen flex flex-col justify-between text-secondary antialiased selection:bg-primary selection:text-white">
+
+    <!-- Global Link Resolver Script (Solves repository naming namespace dynamically) -->
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            // Self-healing pathing. Supports both main organization site (omnivis.github.io/slidi)
+            // and repository folder (omnivis.github.io/OmniVis/slidi)
+            const isSubpath = window.location.pathname.startsWith("/OmniVis");
+            const prefix = isSubpath ? "/OmniVis" : "";
+            
+            document.querySelectorAll("[data-route]").forEach(link => {
+                const route = link.getAttribute("data-route");
+                link.href = prefix + route;
+            });
+
+            // Sync saved BYOK API Keys across environments
+            const openaiKeyInput = document.getElementById("openai-key-input");
+            const anthropicKeyInput = document.getElementById("anthropic-key-input");
+            const saveBtn = document.getElementById("save-keys-btn");
+            const clearBtn = document.getElementById("clear-keys-btn");
+            const statusIndicator = document.getElementById("key-status-indicator");
+
+            // Load existing
+            const updateStatus = () => {
+                const oKey = localStorage.getItem("openai_api_key");
+                const aKey = localStorage.getItem("anthropic_api_key");
+                if (oKey || aKey) {
+                    statusIndicator.innerHTML = `
+                        <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-pulse"></span>
+                        <span class="font-mono text-xs text-emerald-600 font-semibold uppercase tracking-wider">BYOK Active</span>
+                    `;
+                    if (openaiKeyInput && oKey) openaiKeyInput.value = oKey;
+                    if (anthropicKeyInput && aKey) anthropicKeyInput.value = aKey;
+                } else {
+                    statusIndicator.innerHTML = `
+                        <span class="inline-block w-2 h-2 rounded-full bg-amber-500 mr-2"></span>
+                        <span class="font-mono text-xs text-amber-600 font-semibold uppercase tracking-wider">Server Default</span>
+                    `;
+                }
+            };
+
+            updateStatus();
+
+            saveBtn.addEventListener("click", () => {
+                const oVal = openaiKeyInput.value.trim();
+                const aVal = anthropicKeyInput.value.trim();
+                if (oVal) localStorage.setItem("openai_api_key", oVal);
+                else localStorage.removeItem("openai_api_key");
+                
+                if (aVal) localStorage.setItem("anthropic_api_key", aVal);
+                else localStorage.removeItem("anthropic_api_key");
+
+                statusIndicator.innerHTML = `
+                    <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-pulse"></span>
+                    <span class="font-mono text-xs text-emerald-600 font-semibold uppercase tracking-wider">Keys Saved!</span>
+                `;
+                setTimeout(updateStatus, 1500);
+            });
+
+            clearBtn.addEventListener("click", () => {
+                localStorage.removeItem("openai_api_key");
+                localStorage.removeItem("anthropic_api_key");
+                openaiKeyInput.value = "";
+                anthropicKeyInput.value = "";
+                statusIndicator.innerHTML = `
+                    <span class="inline-block w-2 h-2 rounded-full bg-amber-500 mr-2"></span>
+                    <span class="font-mono text-xs text-amber-600 font-semibold uppercase tracking-wider">Keys Cleared</span>
+                `;
+                setTimeout(updateStatus, 1500);
+            });
+
+            // Live API Gateway status check
+            const apiStatusDot = document.getElementById("api-status-dot");
+            const apiStatusText = document.getElementById("api-status-text");
+
+            // We dynamically look for local API gateway or default worker URL
+            const testWorkerHealth = async () => {
+                try {
+                    const response = await fetch("https://omnivis-api.berol.workers.dev/api/health", { method: "GET" });
+                    if (response.ok) {
+                        apiStatusDot.className = "w-2 h-2 rounded-full bg-emerald-500 mr-2";
+                        apiStatusText.innerText = "ONLINE";
+                    }
+                } catch {
+                    apiStatusText.innerText = "DEVIATED / OFFLINE";
+                }
+            };
+            testWorkerHealth();
+        });
+    </script>
+
+    <!-- Header Navigation -->
+    <header class="w-full bg-white border-b border-borderNeutral sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-12">
+                <!-- Branding Logo -->
+                <a href="#" class="flex items-center space-x-3 group">
+                    <span class="h-8 w-8 bg-secondary rounded-soft-sm flex items-center justify-center text-white font-display font-extrabold text-lg select-none tracking-tighter">O</span>
+                    <span class="font-display font-black text-xl tracking-tight text-secondary uppercase">Omni<span class="text-primary">Vis</span></span>
+                </a>
+                <nav class="hidden md:flex space-x-8 text-sm font-semibold tracking-wide text-gray-500">
+                    <a href="#" class="text-primary border-b-2 border-primary pb-1">Ecosystem</a>
+                    <a href="https://github.com/OmniVis/OmniVis" target="_blank" class="hover:text-secondary transition-colors duration-200">GitHub Source</a>
+                    <a href="#" class="hover:text-secondary transition-colors duration-200">API Documentation</a>
+                </nav>
             </div>
-<nav class="flex gap-6">
-<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-all" href="#">Privacy</a>
-<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-all" href="#">Terms</a>
-<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-all" href="#">API Status</a>
-<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-all" href="#">Support</a>
-</nav>
-</div>
-</footer>
-</body></html>
+            
+            <div class="flex items-center space-x-4">
+                <!-- Live Cloud API Status -->
+                <div class="hidden sm:flex items-center px-3 py-1.5 bg-gray-50 rounded-soft-sm border border-borderNeutral">
+                    <span id="api-status-dot" class="w-2 h-2 rounded-full bg-amber-500 mr-2 animate-pulse"></span>
+                    <span class="font-mono text-[10px] text-gray-400 font-bold uppercase mr-1">GATEWAY:</span>
+                    <span id="api-status-text" class="font-mono text-[11px] text-secondary font-black uppercase">CHECKING</span>
+                </div>
+                <a data-route="/" class="bg-secondary text-white font-mono text-xs font-bold uppercase tracking-wider px-4 py-2.5 rounded-soft-sm hover:bg-primary transition-all duration-300">
+                    Reload Hub
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-6 py-12 md:py-20 flex flex-col gap-16">
+        
+        <!-- Hero Command Center Section -->
+        <section class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            <div class="lg:col-span-7 flex flex-col gap-6">
+                <!-- System Status Pill -->
+                <div class="inline-flex items-center self-start bg-white border border-borderNeutral rounded-full px-3 py-1 text-xs">
+                    <span class="w-2.5 h-2.5 bg-primary rounded-full mr-2"></span>
+                    <span class="font-mono text-[11px] text-gray-500 font-bold tracking-wider uppercase">Unified Release Hub • v1.1.0</span>
+                </div>
+                <!-- Headline -->
+                <h1 class="font-display font-black text-4xl sm:text-6xl tracking-tight leading-[1.1] text-secondary">
+                    The Integrated Hub for <span class="text-primary underline decoration-2 underline-offset-8">High-Performance</span> Creators.
+                </h1>
+                <p class="font-body text-lg text-gray-500 max-w-2xl leading-relaxed">
+                    Synthesizing raw data visualization, fluid dynamic editing, and collaborative deployment into a singular, highly efficient visual command center.
+                </p>
+                <div class="flex flex-wrap gap-4 mt-2">
+                    <a href="#ecosystem-anchor" class="bg-primary text-white font-mono text-sm font-bold uppercase tracking-wider px-6 py-3.5 rounded-soft-sm hover:bg-primary-hover transition-colors shadow-sm">
+                        Launch Applications
+                    </a>
+                    <a href="#byok-anchor" class="bg-white border border-secondary text-secondary font-mono text-sm font-bold uppercase tracking-wider px-6 py-3.5 rounded-soft-sm hover:bg-gray-50 transition-colors">
+                        Configure API Gateway
+                    </a>
+                </div>
+            </div>
+
+            <!-- Quick Stats / Interactive Widget -->
+            <div class="lg:col-span-5 bg-white border border-borderNeutral rounded-soft-lg p-6 flex flex-col gap-6 relative overflow-hidden shadow-sm">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-primary/10 to-transparent rounded-full blur-xl"></div>
+                <div class="flex justify-between items-center pb-4 border-b border-borderNeutral">
+                    <div class="flex items-center space-x-2">
+                        <span class="material-symbols-outlined text-primary text-lg">dashboard_customize</span>
+                        <h3 class="font-display font-extrabold text-sm uppercase tracking-wider">Status Console</h3>
+                    </div>
+                    <span class="font-mono text-[11px] text-gray-400 font-bold">UTC LOCAL_RUN</span>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-bgNeutral p-4 rounded-soft-sm border border-borderNeutral/50">
+                        <div class="font-mono text-[10px] text-gray-400 font-bold uppercase tracking-wider">Deployment Host</div>
+                        <div class="font-display font-black text-lg text-secondary mt-1">GitHub Pages</div>
+                    </div>
+                    <div class="bg-bgNeutral p-4 rounded-soft-sm border border-borderNeutral/50">
+                        <div class="font-mono text-[10px] text-gray-400 font-bold uppercase tracking-wider">Database Engine</div>
+                        <div class="font-display font-black text-lg text-secondary mt-1">Cloudflare D1</div>
+                    </div>
+                </div>
+
+                <div class="bg-secondary text-white p-4 rounded-soft-sm font-mono text-xs flex flex-col gap-2">
+                    <div class="text-primary font-bold">> system_check --status</div>
+                    <div class="text-gray-400">• CORS security protocol: ON</div>
+                    <div class="text-gray-400">• Multi-app token syncer: ON</div>
+                    <div class="text-gray-400">• BYOK Local Storage sync: READY</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Ecosystem Anchor -->
+        <hr class="border-borderNeutral" id="ecosystem-anchor" />
+
+        <!-- Ecosystem Section -->
+        <section class="flex flex-col gap-8">
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div>
+                    <h2 class="font-display font-black text-3xl tracking-tight text-secondary">Ecosystem Modules</h2>
+                    <p class="font-body text-gray-500 mt-2">Engineered with micro-precision for high-fidelity visualization.</p>
+                </div>
+                <span class="font-mono text-xs text-primary font-semibold uppercase tracking-widest bg-primary/5 px-3 py-1 rounded-full border border-primary/10">Active Environments</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                
+                <!-- Graphi Module Card -->
+                <div class="bg-white border border-borderNeutral rounded-soft-lg overflow-hidden flex flex-col justify-between glow-active transition-all duration-300 shadow-sm group">
+                    <div class="p-8 flex flex-col gap-6">
+                        <div class="flex justify-between items-start">
+                            <span class="material-symbols-outlined text-4xl text-primary bg-primary/5 p-3 rounded-soft-sm">schema</span>
+                            <span class="font-mono text-[10px] text-gray-400 font-bold border border-borderNeutral px-2 py-0.5 rounded-soft-sm">MODULE 01</span>
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <h3 class="font-display font-black text-2xl tracking-tight group-hover:text-primary transition-colors">Graphi</h3>
+                            <p class="font-mono text-xs text-primary/80 font-semibold uppercase tracking-wider">Advanced Flow & Diagram Modeler</p>
+                            <p class="font-body text-sm text-gray-500 leading-relaxed mt-2">
+                                Woven visualization tool leveraging Mermaid to compile complex technical diagrams, structures, and software flows in milliseconds. Supports full AI diagram auto-generations.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="px-8 py-4 bg-bgNeutral border-t border-borderNeutral flex items-center justify-between">
+                        <span class="font-mono text-xs text-gray-400">Pure Client Build</span>
+                        <a data-route="/graphi/" class="bg-secondary text-white font-mono text-xs font-bold uppercase tracking-wider px-5 py-2.5 rounded-soft-sm hover:bg-primary transition-colors duration-200">
+                            Launch Graphi
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Slidi Module Card -->
+                <div class="bg-white border border-borderNeutral rounded-soft-lg overflow-hidden flex flex-col justify-between glow-active transition-all duration-300 shadow-sm group">
+                    <div class="p-8 flex flex-col gap-6">
+                        <div class="flex justify-between items-start">
+                            <span class="material-symbols-outlined text-4xl text-primary bg-primary/5 p-3 rounded-soft-sm">slideshow</span>
+                            <span class="font-mono text-[10px] text-gray-400 font-bold border border-borderNeutral px-2 py-0.5 rounded-soft-sm">MODULE 02</span>
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <h3 class="font-display font-black text-2xl tracking-tight group-hover:text-primary transition-colors">Slidi</h3>
+                            <p class="font-mono text-xs text-primary/80 font-semibold uppercase tracking-wider">Fluid Presentation Builder</p>
+                            <p class="font-body text-sm text-gray-500 leading-relaxed mt-2">
+                                A dynamic, visual canvas presentation engine. Generates slides, styles structures, compiles layouts natively, and outputs clean dynamic designs with full cloud syncing.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="px-8 py-4 bg-bgNeutral border-t border-borderNeutral flex items-center justify-between">
+                        <span class="font-mono text-xs text-gray-400">Pure Client Build</span>
+                        <a data-route="/slidi/" class="bg-secondary text-white font-mono text-xs font-bold uppercase tracking-wider px-5 py-2.5 rounded-soft-sm hover:bg-primary transition-colors duration-200">
+                            Launch Slidi
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- BYOK Config Anchor -->
+        <hr class="border-borderNeutral" id="byok-anchor" />
+
+        <!-- Bring Your Own Key System Config Console -->
+        <section class="bg-white border border-borderNeutral rounded-soft-lg p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 shadow-sm">
+            <div class="lg:col-span-5 flex flex-col gap-4">
+                <div class="flex items-center space-x-2">
+                    <span class="material-symbols-outlined text-primary text-xl">key</span>
+                    <h2 class="font-display font-black text-xl uppercase tracking-wider">API Keys Config</h2>
+                </div>
+                <p class="font-body text-sm text-gray-500 leading-relaxed">
+                    OmniVis utilizes a secure, zero-server-storage **Bring Your Own Key (BYOK)** setup.
+                </p>
+                <p class="font-body text-sm text-gray-500 leading-relaxed">
+                    By saving your keys here, they are stored directly in your **local browser storage**. When you generate presentations or diagrams, the apps pass them secure-end-to-end to the worker endpoint.
+                </p>
+                
+                <div id="key-status-indicator" class="inline-flex items-center mt-2 px-3 py-2 bg-bgNeutral rounded-soft-sm border border-borderNeutral self-start">
+                    <!-- Dynamic state handled in JS -->
+                </div>
+            </div>
+
+            <div class="lg:col-span-7 flex flex-col gap-4 justify-center">
+                <!-- OpenAI Key Input -->
+                <div class="flex flex-col gap-1.5">
+                    <label class="font-mono text-[10px] text-secondary font-black uppercase tracking-wider">OpenAI API Key (sk-proj-...)</label>
+                    <input id="openai-key-input" type="password" placeholder="Enter sk-... keys" class="border border-borderNeutral rounded-soft-sm px-3 py-2.5 text-sm font-mono focus:outline-none focus:border-primary w-full bg-bgNeutral/50" />
+                </div>
+                
+                <!-- Anthropic Key Input -->
+                <div class="flex flex-col gap-1.5">
+                    <label class="font-mono text-[10px] text-secondary font-black uppercase tracking-wider">Anthropic API Key (sk-ant-...)</label>
+                    <input id="anthropic-key-input" type="password" placeholder="Enter sk-ant-... keys" class="border border-borderNeutral rounded-soft-sm px-3 py-2.5 text-sm font-mono focus:outline-none focus:border-primary w-full bg-bgNeutral/50" />
+                </div>
+
+                <div class="flex space-x-3 mt-2">
+                    <button id="save-keys-btn" class="bg-primary text-white font-mono text-xs font-bold uppercase tracking-wider px-5 py-3 rounded-soft-sm hover:bg-primary-hover transition-colors">
+                        Save Keys Locally
+                    </button>
+                    <button id="clear-keys-btn" class="bg-bgNeutral border border-borderNeutral text-gray-500 font-mono text-xs font-bold uppercase tracking-wider px-5 py-3 rounded-soft-sm hover:bg-gray-100 transition-colors">
+                        Clear Keys
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full bg-white border-t border-borderNeutral mt-16 py-12">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div class="flex items-center space-x-3">
+                <span class="h-6 w-6 bg-secondary rounded-soft-sm flex items-center justify-center text-white font-display font-extrabold text-xs select-none tracking-tighter">O</span>
+                <span class="font-display font-black text-sm tracking-tight text-secondary uppercase">Omni<span class="text-primary">Vis</span></span>
+            </div>
+            <p class="font-body text-xs text-gray-400 text-center md:text-left">
+                © 2026 OmniVis visual command ecosystem. High-Performance creation architecture.
+            </p>
+            <nav class="flex space-x-6 text-xs text-gray-400">
+                <a href="#" class="hover:text-secondary transition-all">Privacy</a>
+                <a href="#" class="hover:text-secondary transition-all">Terms</a>
+                <a href="https://github.com/OmniVis/OmniVis" class="hover:text-secondary transition-all">Source Repository</a>
+            </nav>
+        </div>
+    </footer>
+
+</body>
+</html>
