@@ -55,7 +55,11 @@ jobs:
         run: |
           cd apps/slidi
           npm install --ignore-scripts
-          rm -rf src/app/api
+          # Remove server-side routes incompatible with static export:
+          # - api/*       → moved to Cloudflare Worker
+          # - collab/*    → requires live WebSocket server
+          # - view/[id]   → requires DB lookup (no generateStaticParams)
+          rm -rf src/app/api src/app/collab src/app/view
           npm run build
           mkdir -p ../../dist/slidi
           cp -r out/. ../../dist/slidi/
