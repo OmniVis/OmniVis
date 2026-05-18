@@ -29,7 +29,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
         with:
-          version: 8
+          version: 10
 
       - name: Build Launchpad
         run: |
@@ -39,20 +39,24 @@ jobs:
       - name: Build Graphi
         env:
           BASE_PATH: /graphi
+          HUSKY: "0"
         run: |
           cd apps/graphi
-          pnpm install
+          pnpm install --no-frozen-lockfile
           pnpm run build
-          cp -r build ../../dist/graphi || cp -r target ../../dist/graphi || cp -r .svelte-kit/output/prerendered/pages ../../dist/graphi || true
+          mkdir -p ../../dist/graphi
+          cp -r build/. ../../dist/graphi/
           
       - name: Build Slidi
         env:
           NEXT_BASE_PATH: /slidi
+          HUSKY: "0"
         run: |
           cd apps/slidi
-          npm install
+          npm install --ignore-scripts
           npm run build
-          cp -r out ../../dist/slidi
+          mkdir -p ../../dist/slidi
+          cp -r out/. ../../dist/slidi/
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
