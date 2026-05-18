@@ -1072,7 +1072,7 @@ function ChatPaneInner({ onSettings, onInsecure }: ChatPaneProps) {
                   <div className="px-3 py-1.5 mb-1">
                     <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Providers</span>
                   </div>
-                  {(["openai", "anthropic", "gemini", "adesso"] as const).map((p) => {
+                  {(["openai", "anthropic", "gemini"] as const).map((p) => {
                     const hasProviderKey = !!keys[p];
                     const isSelected = provider === p;
                     return (
@@ -1096,32 +1096,6 @@ function ChatPaneInner({ onSettings, onInsecure }: ChatPaneProps) {
                       </button>
                     );
                   })}
-                  
-                  {provider === "adesso" && (
-                    <>
-                      <div className="h-[1px] bg-slate-100 my-2 mx-2" />
-                      <div className="px-3 py-1.5 mb-1">
-                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">adesso AI Hub Models</span>
-                      </div>
-                      <div className="max-h-[200px] overflow-y-auto custom-scrollbar">
-                        {ADESSO_MODELS.map((m) => {
-                          const isModelSelected = adessoModel === m.id;
-                          return (
-                            <button
-                              key={m.id}
-                              onClick={() => { setAdessoModel(m.id); setShowModelDropdown(false); if (isFreeAdessoModel(m.id)) setShowFreeModelPopup(true); }}
-                              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-[10px] font-bold transition-all ${
-                                isModelSelected ? "text-blue-600 bg-blue-50/50" : "hover:bg-slate-50 text-slate-600"
-                              }`}
-                            >
-                              <span className="text-left line-clamp-1">{m.label}</span>
-                              {isModelSelected && <CheckCircle2 className="w-3 h-3 text-blue-500" />}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </>
-                  )}
 
                   <div className="h-[1px] bg-slate-100 my-1 mx-2" />
                   <button

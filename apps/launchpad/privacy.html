@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy - OmniVis Command Hub</title>
+    
+    <!-- Premium Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700;800;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#0050cb',      // Vibrant Electric Blue
+                        'primary-hover': '#003fa4',
+                        secondary: '#0b1c30',    // Deep Ink / Absolute Black
+                        bgNeutral: '#F5F7F9',     // Cloud Grey
+                        borderNeutral: '#E2E8F0', // Soft structural boundaries
+                        gray: {
+                            50: '#f8fafc',
+                            100: '#f1f5f9',
+                            200: '#e2e8f0',
+                            300: '#cbd5e1',
+                            400: '#94a3b8',
+                            500: '#64748b',
+                            600: '#475569',
+                            700: '#334155',
+                            800: '#1e293b',
+                            900: '#0f172a',
+                        }
+                    },
+                    fontFamily: {
+                        display: ['Hanken Grotesk', 'sans-serif'],
+                        body: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    borderRadius: {
+                        'soft-sm': '4px',
+                        'soft-lg': '8px',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F5F7F9;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between text-secondary antialiased selection:bg-primary selection:text-white">
+
+    <!-- Header Navigation -->
+    <header class="w-full bg-white border-b border-borderNeutral sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <!-- Branding Logo -->
+            <a href="index.html" class="flex items-center space-x-3 group">
+                <span class="h-8 w-8 bg-secondary rounded-soft-sm flex items-center justify-center text-white font-display font-extrabold text-lg select-none tracking-tighter transition-all duration-300 group-hover:scale-105 group-hover:bg-primary">O</span>
+                <span class="font-display font-black text-xl tracking-tight text-secondary uppercase transition-colors duration-300 group-hover:text-primary">Omni<span class="text-primary group-hover:text-secondary">Vis</span></span>
+            </a>
+            
+            <a href="index.html" class="flex items-center space-x-2 text-sm font-semibold text-gray-500 hover:text-secondary transition-colors duration-200">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path></svg>
+                <span>Back to Hub</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-4xl w-full mx-auto px-6 py-12 md:py-16 flex flex-col gap-10">
+        <div class="flex flex-col gap-4 border-b border-borderNeutral pb-6">
+            <h1 class="font-display font-black text-4xl sm:text-5xl tracking-tight text-secondary">Privacy Policy</h1>
+            <p class="font-body text-gray-500">Effective Date: May 18, 2026</p>
+        </div>
+
+        <section class="flex flex-col gap-8 font-body text-[15px] leading-relaxed text-gray-600">
+            <div class="flex flex-col gap-3">
+                <h2 class="font-display font-bold text-xl text-secondary uppercase tracking-tight">1. Privacy-by-Design Architecture</h2>
+                <p>
+                    OmniVis is built from the ground up as a <strong>privacy-first, client-side application</strong>. All of your technical diagrams, visual presentations, code edits, and workspace settings compile directly within your local browser. We do not transmit your creative content to any proprietary centralized servers.
+                </p>
+            </div>
+
+            <div class="flex flex-col gap-3">
+                <h2 class="font-display font-bold text-xl text-secondary uppercase tracking-tight">2. Bring-Your-Own-Key (BYOK) Data Sovereignty</h2>
+                <p>
+                    When using the advanced AI features powered by OpenAI or Anthropic models, your API credentials (keys) are stored strictly within your browser's local sandbox storage (<code>localStorage</code>).
+                </p>
+                <ul class="list-disc pl-6 flex flex-col gap-2">
+                    <li>Your keys are never transmitted to OmniVis, OmniVis Team, or any secondary analytics servers.</li>
+                    <li>API requests are routed directly from your client machine to the respect model providers or via your explicitly configured custom Worker gateway URL.</li>
+                    <li>You can reset or clear all saved credentials and local configurations at any time using the "Reset Local Config" button on the Command Center dashboard.</li>
+                </ul>
+            </div>
+
+            <div class="flex flex-col gap-3">
+                <h2 class="font-display font-bold text-xl text-secondary uppercase tracking-tight">3. Cookies and Local Storage</h2>
+                <p>
+                    We do not use trackers, profiling cookies, or ad-targeting integrations. We utilize standard Web Storage (<code>localStorage</code>) solely to preserve your active UI configurations, system themes, active diagram templates, and user-seeded presentations to ensure workspace continuity across page reloads.
+                </p>
+            </div>
+
+            <div class="flex flex-col gap-3">
+                <h2 class="font-display font-bold text-xl text-secondary uppercase tracking-tight">4. Third-Party Integrations</h2>
+                <p>
+                    OmniVis provides deep linking capabilities and repository synchronization to GitHub and Cloudflare services. These services operate under their respective privacy parameters and developer agreements. We encourage you to review Cloudflare D1 databases and GitHub Pages privacy disclosures if deploying collaborative hubs.
+                </p>
+            </div>
+
+            <div class="flex flex-col gap-3">
+                <h2 class="font-display font-bold text-xl text-secondary uppercase tracking-tight">5. Contact Information</h2>
+                <p>
+                    For privacy audits, compliance queries, or code repository inquiries, please contact the developer team through our visual command center portal.
+                </p>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full bg-white border-t border-borderNeutral py-8">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div class="flex items-center space-x-3 group">
+                <span class="h-6 w-6 bg-secondary rounded-soft-sm flex items-center justify-center text-white font-display font-extrabold text-xs select-none tracking-tighter">O</span>
+                <span class="font-display font-black text-sm tracking-tight text-secondary uppercase">Omni<span class="text-primary">Vis</span></span>
+            </div>
+            <p class="font-body text-xs text-gray-400 text-center md:text-left">
+                © 2026 OmniVis Team. High-Performance creation architecture.
+            </p>
+        </div>
+    </footer>
+
+</body>
+</html>

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terms of Service - OmniVis Command Hub</title>
+    
+    <!-- Premium Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700;800;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#0050cb',      // Vibrant Electric Blue
+                        'primary-hover': '#003fa4',
+                        secondary: '#0b1c30',    // Deep Ink / Absolute Black
+                        bgNeutral: '#F5F7F9',     // Cloud Grey
+                        borderNeutral: '#E2E8F0', // Soft structural boundaries
+                        gray: {
+                            50: '#f8fafc',
+                            100: '#f1f5f9',
+                            200: '#e2e8f0',
+                            300: '#cbd5e1',
+                            400: '#94a3b8',
+                            500: '#64748b',
+                            600: '#475569',
+                            700: '#334155',
+                            800: '#1e293b',
+                            900: '#0f172a',
+                        }
+                    },
+                    fontFamily: {
+                        display: ['Hanken Grotesk', 'sans-serif'],
+                        body: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    borderRadius: {
+                        'soft-sm': '4px',
+                        'soft-lg': '8px',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F5F7F9;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between text-secondary antialiased selection:bg-primary selection:text-white">
+
+    <!-- Header Navigation -->
+    <header class="w-full bg-white border-b border-borderNeutral sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <!-- Branding Logo -->
+            <a href="index.html" class="flex items-center space-x-3 group">
+                <span class="h-8 w-8 bg-secondary rounded-soft-sm flex items-center justify-center text-white font-display font-extrabold text-lg select-none tracking-tighter transition-all duration-300 group-hover:scale-105 group-hover:bg-primary">O</span>
+                <span class="font-display font-black text-xl tracking-tight text-secondary uppercase transition-colors duration-300 group-hover:text-primary">Omni<span class="text-primary group-hover:text-secondary">Vis</span></span>
+            </a>
+            
+            <a href="index.html" class="flex items-center space-x-2 text-sm font-semibold text-gray-500 hover:text-secondary transition-colors duration-200">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"></path></svg>
+                <span>Back to Hub</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-4xl w-full mx-auto px-6 py-12 md:py-16 flex flex-col gap-10">
+        <div class="flex flex-col gap-4 border-b border-borderNeutral pb-6">
+            <h1 class="font-display font-black text-4xl sm:text-5xl tracking-tight text-secondary">Terms of Service</h1>
+            <p class="font-body text-gray-500">Effective Date: May 18, 2026</p>
+        </div>
+
+        <section class="flex flex-col gap-8 font-body text-[15px] leading-relaxed text-gray-600">
+            <div class="flex flex-col gap-3">
+                <h2 class="font-display font-bold text-xl text-secondary uppercase tracking-tight">1. Acceptance of Terms</h2>
+                <p>
+                    By accessing or utilizing the OmniVis visual command ecosystem, technical applications (including Slidi presentation builder, Graphi Mermaid editor), or command dashboards, you agree to comply with and be bound by these Terms of Service.
+                </p>
+            </div>
+
+            <div class="flex flex-col gap-3">
+                <h2 class="font-display font-bold text-xl text-secondary uppercase tracking-tight">2. Local-First Operation</h2>
+                <p>
+                    OmniVis compiles, operates, and executes technical diagramming and presentation logic locally in your web browser. You acknowledge that you are fully responsible for backing up your work and maintaining active copies of local data, as clear-browser operations, local storage deletions, or workspace resets will discard local configurations.
+                </p>
+            </div>
+
+            <div class="flex flex-col gap-3">
+                <h2 class="font-display font-bold text-xl text-secondary uppercase tracking-tight">3. User Responsibility & API Providers</h2>
+                <p>
+                    When using your own API credentials for third-party AI LLMs, you agree to comply with the respective policies of OpenAI, Anthropic, or Gemini. Any charges, usage rates, or service interruptions from those providers are solely your responsibility.
+                </p>
+            </div>
+
+            <div class="flex flex-col gap-3">
+                <h2 class="font-display font-bold text-xl text-secondary uppercase tracking-tight">4. Open Source & Fair Use</h2>
+                <p>
+                    OmniVis code and applications are distributed in good faith to promote seamless developer workflow. You may inspect, modify, fork, or deploy the code under the standard open-source parameters specified in the root repository license.
+                </p>
+            </div>
+
+            <div class="flex flex-col gap-3">
+                <h2 class="font-display font-bold text-xl text-secondary uppercase tracking-tight">5. Disclaimer of Warranties</h2>
+                <p>
+                    The software is provided "as is," without warranty of any kind, express or implied. In no event shall the OmniVis Team or its contributors be liable for any claims, damages, or other liabilities arising from the use of the platform.
+                </p>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full bg-white border-t border-borderNeutral py-8">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div class="flex items-center space-x-3 group">
+                <span class="h-6 w-6 bg-secondary rounded-soft-sm flex items-center justify-center text-white font-display font-extrabold text-xs select-none tracking-tighter">O</span>
+                <span class="font-display font-black text-sm tracking-tight text-secondary uppercase">Omni<span class="text-primary">Vis</span></span>
+            </div>
+            <p class="font-body text-xs text-gray-400 text-center md:text-left">
+                © 2026 OmniVis Team. High-Performance creation architecture.
+            </p>
+        </div>
+    </footer>
+
+</body>
+</html>

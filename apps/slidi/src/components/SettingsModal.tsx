@@ -36,12 +36,7 @@ const PROVIDERS: {
       placeholder: "AIza...",
       keyUrl: "https://aistudio.google.com/app/apikey",
     },
-    {
-      id: "adesso",
-      label: "adesso",
-      placeholder: "sk-...",
-      keyUrl: "https://portal.ai-hub.3asabc.de/dashboard",
-    },
+
   ];
 
 
@@ -247,28 +242,7 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
                     {error && <p className="text-[10px] text-red-500 font-bold uppercase tracking-tight ml-1">{error}</p>}
                   </div>
 
-                  {selectedProvider === "adesso" && (
-                    <div className="space-y-1.5 pt-2 animate-in fade-in duration-300">
-                      <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Model Configuration</label>
-                      <select
-                        value={localAdessoModel}
-                        onChange={(e) => setLocalAdessoModel(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-[14px] px-4 py-3 text-[13px] font-medium focus:outline-none focus:border-blue-500/50 focus:bg-white transition-all appearance-none"
-                      >
-                        {ADESSO_MODELS.map((m) => (
-                          <option key={m.id} value={m.id}>{m.label}</option>
-                        ))}
-                      </select>
-                      {isFreeAdessoModel(localAdessoModel) && (
-                        <div className="flex gap-2.5 bg-amber-50 border border-amber-200 rounded-[12px] px-3.5 py-3 animate-in fade-in duration-200">
-                          <Info className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
-                          <p className="text-[11px] text-amber-800 leading-relaxed font-medium">
-                            <span className="font-black">Free model selected.</span> Performance may be degraded and presentations are limited to <span className="font-black">5 slides</span> instead of the usual 10+.
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  )}
+
 
                   <div className="bg-slate-50 rounded-[14px] p-4 flex gap-3 border border-slate-100">
                     <Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />

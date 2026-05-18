@@ -88,12 +88,6 @@
             });
 
             // Elements
-            const openaiKeyInput = document.getElementById("openai-key-input");
-            const anthropicKeyInput = document.getElementById("anthropic-key-input");
-            const workerUrlInput = document.getElementById("worker-url-input");
-            const saveBtn = document.getElementById("save-keys-btn");
-            const clearBtn = document.getElementById("clear-keys-btn");
-            const statusIndicator = document.getElementById("key-status-indicator");
             const apiStatusDot = document.getElementById("api-status-dot");
             const apiStatusText = document.getElementById("api-status-text");
 
@@ -121,38 +115,6 @@
                 }
             });
 
-            // Load existing configuration
-            const loadConfig = () => {
-                const oKey = localStorage.getItem("openai_api_key");
-                const aKey = localStorage.getItem("anthropic_api_key");
-                const savedWorkerUrl = localStorage.getItem("omnivis_worker_url");
-
-                // Populate keys
-                if (openaiKeyInput && oKey) openaiKeyInput.value = oKey;
-                if (anthropicKeyInput && aKey) anthropicKeyInput.value = aKey;
-
-                // Populate worker URL (default placeholder if empty)
-                if (workerUrlInput) {
-                    workerUrlInput.value = savedWorkerUrl || "https://omnivis-api.thatzane.workers.dev";
-                }
-
-                updateKeyStatus(oKey || aKey);
-            };
-
-            const updateKeyStatus = (hasKeys) => {
-                if (hasKeys) {
-                    statusIndicator.innerHTML = `
-                        <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 mr-2 animate-pulse"></span>
-                        <span class="font-mono text-[11px] text-emerald-600 font-bold uppercase tracking-wider">BYOK Active</span>
-                    `;
-                } else {
-                    statusIndicator.innerHTML = `
-                        <span class="inline-block w-2.5 h-2.5 rounded-full bg-amber-500 mr-2"></span>
-                        <span class="font-mono text-[11px] text-amber-600 font-bold uppercase tracking-wider">Server Secrets (Default)</span>
-                    `;
-                }
-            };
-
             // Test Worker Health Check
             const testWorkerHealth = async () => {
                 const url = localStorage.getItem("omnivis_worker_url") || "https://omnivis-api.thatzane.workers.dev";
@@ -160,84 +122,31 @@
                 // Strip trailing slash if present
                 const cleanUrl = url.replace(/\/$/, "");
 
-                apiStatusDot.className = "w-2 h-2 rounded-full bg-amber-500 mr-2 animate-pulse";
-                apiStatusText.innerText = "CHECKING";
+                if (apiStatusDot && apiStatusText) {
+                    apiStatusDot.className = "w-2 h-2 rounded-full bg-amber-500 mr-2 animate-pulse";
+                    apiStatusText.innerText = "CHECKING";
+                }
 
                 try {
                     const response = await fetch(`${cleanUrl}/health`, { method: "GET" });
                     if (response.ok) {
                         const data = await response.json();
-                        apiStatusDot.className = "w-2 h-2 rounded-full bg-emerald-500 mr-2";
-                        apiStatusText.innerText = "ONLINE";
+                        if (apiStatusDot && apiStatusText) {
+                            apiStatusDot.className = "w-2 h-2 rounded-full bg-emerald-500 mr-2";
+                            apiStatusText.innerText = "ONLINE";
+                        }
                     } else {
                         throw new Error();
                     }
                 } catch {
-                    apiStatusDot.className = "w-2 h-2 rounded-full bg-rose-500 mr-2";
-                    apiStatusText.innerText = "DEVIATED / OFFLINE";
+                    if (apiStatusDot && apiStatusText) {
+                        apiStatusDot.className = "w-2 h-2 rounded-full bg-rose-500 mr-2";
+                        apiStatusText.innerText = "DEVIATED / OFFLINE";
+                    }
                 }
             };
 
-            // Save Buttons
-            saveBtn.addEventListener("click", () => {
-                const oVal = openaiKeyInput.value.trim();
-                const aVal = anthropicKeyInput.value.trim();
-                const wUrl = workerUrlInput.value.trim();
-
-                // Save keys
-                if (oVal) localStorage.setItem("openai_api_key", oVal);
-                else localStorage.removeItem("openai_api_key");
-                
-                if (aVal) localStorage.setItem("anthropic_api_key", aVal);
-                else localStorage.removeItem("anthropic_api_key");
-
-                // Save worker URL
-                if (wUrl) {
-                    // Normalize URL (ensure http/https prefix)
-                    let formattedUrl = wUrl;
-                    if (!/^https?:\/\//i.test(formattedUrl)) {
-                        formattedUrl = 'https://' + formattedUrl;
-                    }
-                    localStorage.setItem("omnivis_worker_url", formattedUrl);
-                    workerUrlInput.value = formattedUrl;
-                } else {
-                    localStorage.removeItem("omnivis_worker_url");
-                    workerUrlInput.value = "https://omnivis-api.thatzane.workers.dev";
-                }
-
-                statusIndicator.innerHTML = `
-                    <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 mr-2 animate-pulse"></span>
-                    <span class="font-mono text-[11px] text-emerald-600 font-bold uppercase tracking-wider">Gateway Configuration Updated!</span>
-                `;
-                
-                setTimeout(() => {
-                    loadConfig();
-                    testWorkerHealth();
-                }, 1000);
-            });
-
-            clearBtn.addEventListener("click", () => {
-                localStorage.removeItem("openai_api_key");
-                localStorage.removeItem("anthropic_api_key");
-                localStorage.removeItem("omnivis_worker_url");
-                
-                openaiKeyInput.value = "";
-                anthropicKeyInput.value = "";
-                workerUrlInput.value = "https://omnivis-api.thatzane.workers.dev";
-                
-                statusIndicator.innerHTML = `
-                    <span class="inline-block w-2.5 h-2.5 rounded-full bg-rose-500 mr-2"></span>
-                    <span class="font-mono text-[11px] text-rose-600 font-bold uppercase tracking-wider">Configuration Reset!</span>
-                `;
-                
-                setTimeout(() => {
-                    loadConfig();
-                    testWorkerHealth();
-                }, 1000);
-            });
-
             // Initial trigger
-            loadConfig();
             testWorkerHealth();
         });
     </script>
@@ -256,7 +165,6 @@
                     <a href="https://github.com/OmniVis/OmniVis" target="_blank" class="hover:text-secondary transition-colors duration-200">GitHub Source</a>
                     <a href="#" class="open-docs-btn hover:text-secondary transition-colors duration-200">API Documentation</a>
                     <a data-route="/status.html" class="hover:text-secondary transition-colors duration-200 cursor-pointer">System Status</a>
-                    <a data-route="/feedback.html" class="hover:text-secondary transition-colors duration-200 cursor-pointer">Send Feedback</a>
                 </nav>
             </div>
             
@@ -278,58 +186,24 @@
     <main class="flex-grow max-w-7xl w-full mx-auto px-6 py-12 md:py-20 flex flex-col gap-16">
         
         <!-- Hero Command Center Section -->
-        <section class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-            <div class="lg:col-span-7 flex flex-col gap-6">
-                <!-- System Status Pill -->
-                <div class="inline-flex items-center self-start bg-white border border-borderNeutral rounded-full px-3 py-1 text-xs">
-                    <span class="w-2.5 h-2.5 bg-primary rounded-full mr-2"></span>
-                    <span class="font-mono text-[11px] text-gray-500 font-bold tracking-wider uppercase">Unified Release Hub • v1.1.0</span>
-                </div>
-                <!-- Headline -->
-                <h1 class="font-display font-black text-4xl sm:text-6xl tracking-tight leading-[1.1] text-secondary">
-                    The Integrated Hub for <span class="text-primary underline decoration-2 underline-offset-8">High-Performance</span> Creators.
-                </h1>
-                <p class="font-body text-lg text-gray-500 max-w-2xl leading-relaxed">
-                    Synthesizing raw data visualization, fluid dynamic editing, and collaborative deployment into a singular, highly efficient visual command center.
-                </p>
-                <div class="flex flex-wrap gap-4 mt-2">
-                    <a href="#ecosystem-anchor" class="bg-primary text-white font-mono text-sm font-bold uppercase tracking-wider px-6 py-3.5 rounded-soft-sm hover:bg-primary-hover transition-colors shadow-sm">
-                        Launch Applications
-                    </a>
-                    <a href="#byok-anchor" class="bg-white border border-secondary text-secondary font-mono text-sm font-bold uppercase tracking-wider px-6 py-3.5 rounded-soft-sm hover:bg-gray-50 transition-colors">
-                        Configure API Gateway
-                    </a>
-                </div>
+        <section class="flex flex-col items-center text-center max-w-4xl mx-auto gap-6 py-12 md:py-16">
+            <!-- System Status Pill -->
+            <div class="inline-flex items-center bg-white border border-borderNeutral rounded-full px-3 py-1 text-xs shadow-sm">
+                <span class="w-2 h-2 bg-primary rounded-full mr-2"></span>
+                <span class="font-mono text-[11px] text-gray-500 font-bold tracking-wider uppercase">Unified Release Hub • v1.1.0</span>
             </div>
-
-            <!-- Quick Stats / Interactive Widget -->
-            <div class="lg:col-span-5 bg-white border border-borderNeutral rounded-soft-lg p-6 flex flex-col gap-6 relative overflow-hidden shadow-sm">
-                <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-primary/10 to-transparent rounded-full blur-xl"></div>
-                <div class="flex justify-between items-center pb-4 border-b border-borderNeutral">
-                    <div class="flex items-center space-x-2">
-                        <span class="material-symbols-outlined text-primary text-lg">dashboard_customize</span>
-                        <h3 class="font-display font-extrabold text-sm uppercase tracking-wider">Status Console</h3>
-                    </div>
-                    <span class="font-mono text-[11px] text-gray-400 font-bold">UTC LOCAL_RUN</span>
-                </div>
-                
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="bg-bgNeutral p-4 rounded-soft-sm border border-borderNeutral/50">
-                        <div class="font-mono text-[10px] text-gray-400 font-bold uppercase tracking-wider">Deployment Host</div>
-                        <div class="font-display font-black text-lg text-secondary mt-1">GitHub Pages</div>
-                    </div>
-                    <div class="bg-bgNeutral p-4 rounded-soft-sm border border-borderNeutral/50">
-                        <div class="font-mono text-[10px] text-gray-400 font-bold uppercase tracking-wider">Database Engine</div>
-                        <div class="font-display font-black text-lg text-secondary mt-1">Cloudflare D1</div>
-                    </div>
-                </div>
-
-                <div class="bg-secondary text-white p-4 rounded-soft-sm font-mono text-xs flex flex-col gap-2">
-                    <div class="text-primary font-bold">> system_check --status</div>
-                    <div class="text-gray-400">• CORS security protocol: ON</div>
-                    <div class="text-gray-400">• Multi-app token syncer: ON</div>
-                    <div class="text-gray-400">• BYOK Local Storage sync: READY</div>
-                </div>
+            <!-- Headline -->
+            <h1 class="font-display font-black text-4xl sm:text-6xl tracking-tight leading-[1.1] text-secondary">
+                The Integrated Hub for <br class="hidden sm:inline" />
+                <span class="text-primary underline decoration-2 underline-offset-8">High-Performance</span> Creators.
+            </h1>
+            <p class="font-body text-lg text-gray-500 max-w-2xl leading-relaxed mt-2">
+                Synthesizing raw data visualization, fluid dynamic editing, and collaborative deployment into a singular, highly efficient visual command center.
+            </p>
+            <div class="flex flex-wrap justify-center gap-4 mt-4">
+                <a href="#ecosystem-anchor" class="bg-primary text-white font-mono text-sm font-bold uppercase tracking-wider px-8 py-4 rounded-soft-sm hover:bg-primary-hover transition-colors shadow-sm">
+                    Launch Applications
+                </a>
             </div>
         </section>
 
@@ -397,65 +271,6 @@
             </div>
         </section>
 
-        <!-- BYOK Config Anchor -->
-        <hr class="border-borderNeutral" id="byok-anchor" />
-
-        <!-- Configuration Console (BYOK + Cloudflare Gateway) -->
-        <section class="bg-white border border-borderNeutral rounded-soft-lg p-8 grid grid-cols-1 lg:grid-cols-12 gap-8 shadow-sm">
-            <div class="lg:col-span-5 flex flex-col gap-4">
-                <div class="flex items-center space-x-2">
-                    <span class="material-symbols-outlined text-primary text-xl">settings_ethernet</span>
-                    <h2 class="font-display font-black text-xl uppercase tracking-wider">Gateway Configuration</h2>
-                </div>
-                <p class="font-body text-sm text-gray-500 leading-relaxed">
-                    Configure your **Cloudflare Worker API Gateway URL** and local keys here.
-                </p>
-                <p class="font-body text-sm text-gray-500 leading-relaxed">
-                    By saving your keys and endpoint, they are stored securely in your **local browser storage** and never touch third-party servers. All requests are routed directly to your personal deployment.
-                </p>
-                
-                <div id="key-status-indicator" class="inline-flex items-center mt-2 px-3 py-2 bg-bgNeutral rounded-soft-sm border border-borderNeutral self-start">
-                    <!-- Dynamic state handled in JS -->
-                </div>
-                
-                <a href="#" class="open-docs-btn text-xs text-primary font-mono font-bold hover:underline inline-flex items-center gap-1 self-start mt-2">
-                    <span class="material-symbols-outlined text-sm">menu_book</span> Read API Developer Documentation
-                </a>
-            </div>
-
-            <div class="lg:col-span-7 flex flex-col gap-4 justify-center">
-                <!-- Cloudflare Worker API URL -->
-                <div class="flex flex-col gap-1.5">
-                    <div class="flex justify-between items-center">
-                        <label class="font-mono text-[10px] text-secondary font-black uppercase tracking-wider">Worker Gateway URL</label>
-                        <span class="font-mono text-[9px] text-gray-400">(Deploy via GitHub Actions first)</span>
-                    </div>
-                    <input id="worker-url-input" type="text" placeholder="https://omnivis-api.your-subdomain.workers.dev" class="border border-borderNeutral rounded-soft-sm px-3 py-2.5 text-sm font-mono focus:outline-none focus:border-primary w-full bg-bgNeutral/50" />
-                </div>
-
-                <!-- OpenAI Key Input -->
-                <div class="flex flex-col gap-1.5">
-                    <label class="font-mono text-[10px] text-secondary font-black uppercase tracking-wider">OpenAI API Key (sk-proj-...)</label>
-                    <input id="openai-key-input" type="password" placeholder="Enter sk-... keys" class="border border-borderNeutral rounded-soft-sm px-3 py-2.5 text-sm font-mono focus:outline-none focus:border-primary w-full bg-bgNeutral/50" />
-                </div>
-                
-                <!-- Anthropic Key Input -->
-                <div class="flex flex-col gap-1.5">
-                    <label class="font-mono text-[10px] text-secondary font-black uppercase tracking-wider">Anthropic API Key (sk-ant-...)</label>
-                    <input id="anthropic-key-input" type="password" placeholder="Enter sk-ant-... keys" class="border border-borderNeutral rounded-soft-sm px-3 py-2.5 text-sm font-mono focus:outline-none focus:border-primary w-full bg-bgNeutral/50" />
-                </div>
-
-                <div class="flex space-x-3 mt-2">
-                    <button id="save-keys-btn" class="bg-primary text-white font-mono text-xs font-bold uppercase tracking-wider px-5 py-3 rounded-soft-sm hover:bg-primary-hover transition-colors shadow-sm">
-                        Save Configurations
-                    </button>
-                    <button id="clear-keys-btn" class="bg-bgNeutral border border-borderNeutral text-gray-500 font-mono text-xs font-bold uppercase tracking-wider px-5 py-3 rounded-soft-sm hover:bg-gray-100 transition-colors">
-                        Reset Local Config
-                    </button>
-                </div>
-            </div>
-        </section>
-
     </main>
 
     <!-- Footer -->
@@ -469,11 +284,9 @@
                 © 2026 OmniVis visual command ecosystem. High-Performance creation architecture.
             </p>
             <nav class="flex space-x-6 text-xs text-gray-400">
-                <a href="#" class="hover:text-secondary transition-all">Privacy</a>
-                <a href="#" class="hover:text-secondary transition-all">Terms</a>
+                <a data-route="/privacy.html" class="hover:text-secondary transition-all cursor-pointer">Privacy</a>
+                <a data-route="/terms.html" class="hover:text-secondary transition-all cursor-pointer">Terms</a>
                 <a href="https://github.com/OmniVis/OmniVis" class="hover:text-secondary transition-all">Source Repository</a>
-                <a data-route="/status.html" class="hover:text-secondary transition-all cursor-pointer">System Status</a>
-                <a data-route="/feedback.html" class="hover:text-secondary transition-all cursor-pointer">Send Feedback</a>
             </nav>
         </div>
     </footer>
