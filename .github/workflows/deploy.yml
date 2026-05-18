@@ -55,6 +55,7 @@ jobs:
         run: |
           cd apps/slidi
           npm install --ignore-scripts
+          rm -rf src/app/api
           npm run build
           mkdir -p ../../dist/slidi
           cp -r out/. ../../dist/slidi/
