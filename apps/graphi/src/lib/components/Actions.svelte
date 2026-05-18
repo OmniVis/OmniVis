@@ -1,0 +1,327 @@
+<script lang="ts">
+  import Card from '$/components/Card/Card.svelte';
+  import CopyButton from '$/components/CopyButton.svelte';
+  import CopyInput from '$/components/CopyInput.svelte';
+  import ExternalLinkWrapper from '$/components/ExternalLinkWrapper.svelte';
+  import { Button } from '$/components/ui/button';
+  import { Input } from '$/components/ui/input';
+  import { Separator } from '$/components/ui/separator';
+  import * as ToggleGroup from '$/components/ui/toggle-group';
+  import { TID } from '$/constants';
+  import { getDomain } from '$/util/util';
+  import { get } from 'svelte/store';
+  import { waitForRender } from '$lib/util/autoSync';
+  import { activeFileHandle, activeVirtualFileId } from '$lib/util/fileSystem';
+  import { siteFiles } from '$lib/util/siteWorkspace.svelte';
+  import { inputStateStore, stateStore, urlsStore } from '$lib/util/state';
+  import { logEvent } from '$lib/util/stats';
+  import dayjs from 'dayjs';
+  import { toBase64 } from 'js-base64';
+  import DownloadIcon from '~icons/material-symbols/download';
+  import ExternalLinkIcon from '~icons/material-symbols/open-in-new-rounded';
+  import WidthIcon from '~icons/material-symbols/width-rounded';
+
+  import {
+    exportToConfluence,
+    exportToJira,
+    exportToHtml,
+    copyToClipboard,
+    downloadAsFile
+  } from '$/util/exportPlugins';
+  import { toast } from 'svelte-sonner';
+
+  $effect(() => {
+    if (!imageSizeMode) {
+      imageSizeMode = 'auto';
+    }
+  });
+
+  let imageSize = $state(1080);
+
+  const getSvgElement = () => {
+    const svgElement = document.querySelector('#container svg')?.cloneNode(true) as HTMLElement;
+    svgElement.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+    return svgElement;
+  };
+
+  const getBase64SVG = (svg?: HTMLElement, width?: number, height?: number): string => {
+    if (svg) {
+      // Prevents the SVG size of the interface from being changed
+      svg = svg.cloneNode(true) as HTMLElement;
+    }
+    if (height) {
+      svg?.setAttribute('height', `${height}px`);
+    }
+    if (width) {
+      svg?.setAttribute('width', `${width}px`);
+    }
+
+    if (!svg) {
+      svg = getSvgElement();
+    }
+
+    if (!isTransparent) {
+      svg.style.backgroundColor = window
+        .getComputedStyle(document.body)
+        .getPropertyValue('--background');
+    } else {
+      svg.style.backgroundColor = 'transparent';
+    }
+
+    const svgString = svg.outerHTML
+      .replaceAll('<br>', '<br/>')
+      .replaceAll(/<img([^>]*)>/g, (m, g: string) => `<img ${g} />`);
+
+    return toBase64(`<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet href="${FONT_AWESOME_URL}" type="text/css"?>
+${svgString}`);
+  };
+
+  const exportImage = async (event: Event, exporter: Exporter) => {
+    $inputStateStore.panZoom = false;
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await waitForRender();
+    const canvas = document.createElement('canvas');
+    const svg = document.querySelector<HTMLElement>('#container svg');
+    if (!svg) {
+      throw new Error('svg not found');
+    }
+
+    const box = svg.getBoundingClientRect();
+
+    if (imageSizeMode === 'width') {
+      const ratio = box.height / box.width;
+      canvas.width = imageSize;
+      canvas.height = imageSize * ratio;
+    } else if (imageSizeMode === 'height') {
+      const ratio = box.width / box.height;
+      canvas.width = imageSize * ratio;
+      canvas.height = imageSize;
+    } else {
+      const multiplier = 2;
+      canvas.width = box.width * multiplier;
+      canvas.height = box.height * multiplier;
+    }
+
+    const context = canvas.getContext('2d');
+    if (!context) {
+      throw new Error('context not found');
+    }
+
+    if (!isTransparent) {
+      context.fillStyle = window.getComputedStyle(document.body).getPropertyValue('--background');
+      context.fillRect(0, 0, canvas.width, canvas.height);
+    } else {
+      context.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    const image = new Image();
+    image.addEventListener('load', () => {
+      exporter(context, image)();
+      $inputStateStore.panZoom = true;
+    });
+    image.src = `data:image/svg+xml;base64,${getBase64SVG(svg, canvas.width, canvas.height)}`;
+    // Fallback to set panZoom to true after 2 seconds
+    setTimeout(() => {
+      if (!$inputStateStore.panZoom) {
+        $inputStateStore.panZoom = true;
+      }
+    }, 2000);
+    event.stopPropagation();
+    event.preventDefault();
+  };
+
+  const getFileName = (extension: string) => {
+    console.log('getFileName triggered for extension', extension);
+    // 1. Check local file system handles
+    const pHandle = get(activeFileHandle);
+    console.log('activeFileHandle is', pHandle);
+    if (pHandle && pHandle.name) {
+      const baseName = pHandle.name.replace(/\.[^/.]+$/, '');
+      return `${baseName}.${extension}`;
+    }
+
+    // 2. Check workspace handles
+    const virtualId = get(activeVirtualFileId);
+    console.log('activeVirtualFileId is', virtualId);
+    if (virtualId) {
+      console.log('siteFiles is', siteFiles, 'length:', siteFiles.length);
+      const file = siteFiles.find((f) => f.id === virtualId);
+      console.log('found virtual file:', file);
+      if (file && file.name) {
+        const baseName = file.name.replace(/\.[^/.]+$/, '');
+        return `${baseName}.${extension}`;
+      }
+    }
+
+    // 3. Fallback
+    return `mermaid-diagram-${dayjs().format('YYYY-MM-DD-HHmmss')}.${extension}`;
+  };
+
+  const simulateDownload = (download: string, href: string): void => {
+    const a = document.createElement('a');
+    a.download = download;
+    a.href = href;
+    a.click();
+    a.remove();
+  };
+
+  const downloadImage: Exporter = (context, image) => {
+    return () => {
+      const { canvas } = context;
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      simulateDownload(
+        getFileName('png'),
+        canvas.toDataURL('image/png').replace('image/png', 'image/octet-stream')
+      );
+    };
+  };
+
+  const isClipboardAvailable = (): boolean => {
+    return Object.prototype.hasOwnProperty.call(window, 'ClipboardItem');
+  };
+
+  const clipboardCopy: Exporter = (context, image) => {
+    return () => {
+      const { canvas } = context;
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob((blob) => {
+        try {
+          if (!blob) {
+            throw new Error('blob is empty');
+          }
+          void navigator.clipboard.write([
+            new ClipboardItem({
+              [blob.type]: blob
+            })
+          ]);
+        } catch (error) {
+          console.error(error);
+        }
+      });
+    };
+  };
+
+  const onCopyClipboard = async (event: Event) => {
+    await exportImage(event, clipboardCopy);
+    logEvent('copyClipboard');
+  };
+
+  const onDownloadPNG = async (event: Event) => {
+    await exportImage(event, downloadImage);
+    logEvent('download', {
+      type: 'png'
+    });
+  };
+
+  const onDownloadSVG = () => {
+    simulateDownload(getFileName('svg'), `data:image/svg+xml;base64,${getBase64SVG()}`);
+    logEvent('download', {
+      type: 'svg'
+    });
+  };
+</script>
+
+{#snippet dualActionButton(text: string, download: (event: Event) => unknown, url?: string)}
+  <div class="flex flex-grow gap-0.5">
+    <Button
+      class={['flex-grow', url && 'rounded-r-none']}
+      onclick={download}
+      data-testid="download-{text}">
+      <DownloadIcon />
+      {text}
+    </Button>
+    <ExternalLinkWrapper domain={getDomain(url)} isVisible={!!url}>
+      <Button class="rounded-l-none" href={url} target="_blank" rel="noreferrer noopener">
+        <ExternalLinkIcon />
+      </Button>
+    </ExternalLinkWrapper>
+  </div>
+{/snippet}
+
+<Card title="Actions" isStackable icon={{ component: DownloadIcon, class: 'rotate-180' }}>
+  <div class="flex min-w-fit flex-col gap-2 p-2">
+    <div class="flex w-full items-center gap-2 py-2 whitespace-nowrap">
+      PNG size
+      <ToggleGroup.Root type="single" variant="outline" bind:value={imageSizeMode}>
+        <ToggleGroup.Item value="auto">Auto</ToggleGroup.Item>
+        <ToggleGroup.Item value="width">Width</ToggleGroup.Item>
+        <ToggleGroup.Item value="height">Height</ToggleGroup.Item>
+      </ToggleGroup.Root>
+      {#if imageSizeMode !== 'auto'}
+        <WidthIcon
+          class={['size-6 shrink-0 transition-all', imageSizeMode === 'height' && 'rotate-90']} />
+      {/if}
+      <Input
+        type="number"
+        min="3"
+        max="10000"
+        disabled={imageSizeMode === 'auto'}
+        bind:value={imageSize} />
+    </div>
+    <div class="flex items-center gap-2 px-2 py-1">
+      <input
+        id="transparent-bg"
+        type="checkbox"
+        bind:checked={isTransparent}
+        class="size-4 rounded border-gray-300 text-primary focus:ring-primary" />
+      <label for="transparent-bg" class="cursor-pointer text-sm whitespace-nowrap"
+        >Transparent background</label>
+    </div>
+    <div class="flex gap-2">
+      {@render dualActionButton('PNG', onDownloadPNG, $urlsStore.png)}
+      {@render dualActionButton('SVG', onDownloadSVG, $urlsStore.svg)}
+      <ExternalLinkWrapper domain={getDomain($urlsStore.kroki)} isVisible={!!$urlsStore.kroki}>
+        <a target="_blank" rel="noreferrer" class="flex-grow" href={$urlsStore.kroki}>
+          <Button class="action-btn flex w-full items-center gap-2">
+            <ExternalLinkIcon /> Kroki
+          </Button>
+        </a>
+      </ExternalLinkWrapper>
+    </div>
+    <Separator />
+    {#if isClipboardAvailable()}
+      <CopyButton onclick={onCopyClipboard} label="Copy Image" />
+    {/if}
+    <ExternalLinkWrapper
+      labelPrefix="Thumbnail generated by"
+      domain={getDomain($urlsStore.png)}
+      isVisible={!!$urlsStore.mdCode}>
+      <CopyInput value={$urlsStore.mdCode} label="Copy Markdown" testID={TID.copyMarkdown} />
+    </ExternalLinkWrapper>
+    <Separator />
+    <p class="px-1 text-xs font-semibold text-muted-foreground">Export To...</p>
+    <div class="flex flex-wrap gap-1">
+      <Button
+        size="sm"
+        variant="outline"
+        class="flex-1 text-xs"
+        onclick={async () => {
+          const ok = await copyToClipboard(exportToConfluence($stateStore.code));
+          if (ok) toast.success('Confluence macro copied!');
+        }}>
+        Confluence
+      </Button>
+      <Button
+        size="sm"
+        variant="outline"
+        class="flex-1 text-xs"
+        onclick={async () => {
+          const ok = await copyToClipboard(exportToJira($stateStore.code));
+          if (ok) toast.success('Jira macro copied!');
+        }}>
+        Jira
+      </Button>
+      <Button
+        size="sm"
+        variant="outline"
+        class="flex-1 text-xs"
+        onclick={() => {
+          downloadAsFile(exportToHtml($stateStore.code), getFileName('html'), 'text/html');
+          toast.success('HTML file downloaded!');
+        }}>
+        HTML
+      </Button>
+    </div>
+  </div>
+</Card>

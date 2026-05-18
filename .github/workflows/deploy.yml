@@ -1,65 +1,73 @@
-name: Deploy Live Editor
+name: Deploy OmniVis to GitHub Pages
+
 on:
-  workflow_dispatch:
   push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
-      - develop
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-
-      - uses: actions/setup-node@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          node-version-file: '.node-version'
-          cache: pnpm
+          node-version: "20"
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Build Launchpad
+        run: |
+          mkdir -p dist
+          cp -r apps/launchpad/* dist/
+
+      - name: Build Graphi
+        env:
+          BASE_PATH: /graphi
+        run: |
+          cd apps/graphi
+          pnpm install
+          pnpm run build
+          cp -r build ../../dist/graphi || cp -r target ../../dist/graphi || cp -r .svelte-kit/output/prerendered/pages ../../dist/graphi || true
+          
+      - name: Build Slidi
+        env:
+          NEXT_BASE_PATH: /slidi
+        run: |
+          cd apps/slidi
+          npm install
+          npm run build
+          cp -r out ../../dist/slidi
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
-        with:
-          static_site_generator: sveltekit
-
-      - name: Build & Deploy
-        env:
-          MERMAID_DOMAIN: 'GraphiTeam.github.io'
-          MERMAID_ANALYTICS_URL: 'https://p.mermaid.live'
-          MERMAID_RENDERER_URL: 'https://mermaid.ink'
-          MERMAID_KROKI_RENDERER_URL: 'https://kroki.io'
-          MERMAID_IS_ENABLED_MERMAID_CHART_LINKS: 'true'
-          NODE_OPTIONS: '--max-old-space-size=4096'
-        run: |
-          export DEPLOY=true
-          [ "$GITHUB_EVENT_NAME" != "pull_request" ] && rm -rf docs/_app/
-          pnpm install
-          pnpm build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./docs
+          path: './dist'
 
   deploy:
-    if: ${{ github.ref == 'refs/heads/main' }}
-    needs: build
-    runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
-    permissions:
-      pages: write # to deploy to Pages
-      id-token: write # to verify the deployment originates from an appropriate source
+    runs-on: ubuntu-latest
+    needs: build
     steps:
       - name: Deploy to GitHub Pages
         id: deployment

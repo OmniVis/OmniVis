@@ -1,0 +1,84 @@
+stages:
+  - build-app
+  - build-image
+  - deploy
+
+variables:
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: ''
+  DOCKER_BUILDKIT: '1'
+  DEPLOY_DIR: '/opt/graphi'
+
+# Stage 1: compile the SvelteKit SPA in a Node container.
+# Runs separately from Docker so we can apply NODE_OPTIONS to beat OOM
+# and use GitLab's cache to avoid re-downloading pnpm packages each time.
+build-app:
+  stage: build-app
+  image: node:20-slim
+  variables:
+    BASE_PATH: '/graphi'
+  before_script:
+    - corepack enable pnpm
+    - pnpm config set store-dir .pnpm-store
+  script:
+    - pnpm install --frozen-lockfile --ignore-scripts
+    - NODE_OPTIONS="--max-old-space-size=4096" pnpm build
+    - 'test -d target/client/graphi/_app/immutable || (echo "ERROR: target/client/graphi/_app/immutable missing - build failed to produce JS bundles" && exit 1)'
+  cache:
+    key:
+      files:
+        - pnpm-lock.yaml
+    paths:
+      - .pnpm-store/
+  artifacts:
+    paths:
+      - target/
+    expire_in: 1 hour
+  only:
+    - main
+    - master
+
+# Stage 2: pack the pre-built artifacts into a Node.js image and push it.
+# The Dockerfile is now a simple single-stage copy — no Node build needed here.
+build-image:
+  stage: build-image
+  image: docker:24.0.5
+  services:
+    - docker:24.0.5-dind
+  before_script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login $CI_REGISTRY -u "$CI_REGISTRY_USER" --password-stdin
+  script:
+    - docker build -t "$CI_REGISTRY_IMAGE:latest" .
+    - docker push "$CI_REGISTRY_IMAGE:latest"
+  only:
+    - main
+    - master
+
+# Stage 3: pull the new image on the VM and restart the containers.
+deploy:
+  stage: deploy
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache openssh-client sshpass rsync
+    - mkdir -p ~/.ssh && chmod 700 ~/.ssh
+    - ssh-keyscan -H 10.1.101.43 >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+    - export SSHPASS="$SSH_PASSWORD"
+    - SSH_OPTS="-o StrictHostKeyChecking=no"
+    - SSHPASS_CMD="sshpass -e ssh $SSH_OPTS"
+  script:
+    - '$SSHPASS_CMD $SSH_USER@10.1.101.43 "sudo mkdir -p $DEPLOY_DIR && sudo chown $SSH_USER: $DEPLOY_DIR && sudo chmod 755 $DEPLOY_DIR"'
+    - 'echo "CI_REGISTRY_IMAGE=$CI_REGISTRY_IMAGE" > .env'
+    - 'echo "DB_PASSWORD=$DB_PASSWORD" >> .env'
+    - 'echo "USER_ID_HMAC_SECRET=$USER_ID_HMAC_SECRET" >> .env'
+    - 'echo "DATA_ENCRYPTION_KEY=$DATA_ENCRYPTION_KEY" >> .env'
+    - 'rsync -avz -e "sshpass -e ssh $SSH_OPTS" docker-compose.yml .env $SSH_USER@10.1.101.43:$DEPLOY_DIR/'
+    - '$SSHPASS_CMD $SSH_USER@10.1.101.43 "sudo podman login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY"'
+    - '$SSHPASS_CMD $SSH_USER@10.1.101.43 "cd $DEPLOY_DIR && sudo podman-compose pull"'
+    - '$SSHPASS_CMD $SSH_USER@10.1.101.43 "cd $DEPLOY_DIR && sudo podman-compose down && sudo podman-compose up -d"'
+    - '$SSHPASS_CMD $SSH_USER@10.1.101.43 "sudo podman image prune -f"'
+  after_script:
+    - echo "Deployment session finished"
+  only:
+    - main
+    - master

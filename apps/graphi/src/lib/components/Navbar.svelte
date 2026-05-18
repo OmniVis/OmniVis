@@ -1,0 +1,51 @@
+<script lang="ts" module>
+  import { logEvent } from '$lib/util/stats';
+  import { version } from 'mermaid/package.json';
+
+  void logEvent('version', {
+    mermaidVersion: version
+  });
+</script>
+
+<script lang="ts">
+  import { Button } from '$/components/ui/button';
+  import { Separator } from '$/components/ui/separator';
+  import type { Snippet } from 'svelte';
+  import { stateStore } from '$/util/state';
+  import { explorerVisible } from '$/util/fileMetadata.svelte';
+  import { base } from '$app/paths';
+  import SideNavigationIcon from '~icons/material-symbols/menu-open-rounded';
+
+  interface Props {
+    mobileToggle?: Snippet;
+    children: Snippet;
+  }
+
+  let { children, mobileToggle }: Props = $props();
+</script>
+
+<nav class="z-50 flex p-4 sm:p-6">
+  <div class="flex flex-1 items-center gap-2">
+    <a href={base || '/'} class="whitespace-nowrap text-accent">
+      {#if !mobileToggle}
+        GraphiTeam
+      {/if}
+      {$stateStore.viewMode === 'code' ? 'Code Editor' : 'Interactive Playground'}
+    </a>
+  </div>
+
+  <div
+    id="menu"
+    class="hidden flex-nowrap items-center justify-between gap-3 overflow-hidden md:flex">
+    <Button
+      variant="ghost"
+      size="icon"
+      onclick={() => (explorerVisible.visible = !explorerVisible.visible)}
+      title={explorerVisible.visible ? 'Hide Explorer' : 'Show Explorer'}>
+      <SideNavigationIcon />
+    </Button>
+    <Separator orientation="vertical" />
+    {@render children()}
+  </div>
+  {@render mobileToggle?.()}
+</nav>

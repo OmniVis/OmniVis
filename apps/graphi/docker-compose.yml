@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  graphi:
+    image: ${CI_REGISTRY_IMAGE}:latest
+    container_name: tools-graphi
+    restart: always
+    environment:
+      - DB_PASSWORD=${DB_PASSWORD}
+      - USER_ID_HMAC_SECRET=${USER_ID_HMAC_SECRET}
+      - DATA_ENCRYPTION_KEY=${DATA_ENCRYPTION_KEY}
+      - BASE_PATH=/graphi
+    networks:
+      - aitools_net
+
+networks:
+  aitools_net:
+    external: true
