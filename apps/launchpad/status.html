@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>System Status | AI Tools Hub</title>
-    <link rel="icon" type="image/x-icon" href="/branding/launchpad_favicon.ico">
-    <link rel="icon" type="image/png" href="/branding/launchpad_favicon.png">
+    <link rel="icon" type="image/x-icon" href="static/branding/launchpad_favicon.ico">
+    <link rel="icon" type="image/png" href="static/branding/launchpad_favicon.png">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
 
@@ -208,12 +208,12 @@
 <body>
     <header>
         <div class="logo-container">
-            <a href="/">
-                <img src="/branding/launchpad-logo-lockup-on-light.png" alt="AI Hub Logo">
+            <a href="index.html">
+                <img src="static/branding/launchpad-logo-lockup-on-light.png" alt="AI Hub Logo">
                 <span>Status</span>
             </a>
         </div>
-        <a href="/" style="text-decoration: none; color: var(--text-secondary); font-size: 0.9rem;">Back to Hub</a>
+        <a href="index.html" style="text-decoration: none; color: var(--text-secondary); font-size: 0.9rem;">Back to Hub</a>
     </header>
 
     <main>
@@ -321,7 +321,9 @@
             const start = Date.now();
             
             try {
-                const res = await fetch('/slidi/api/status', { method: 'GET', cache: 'no-store' });
+                const isSubpath = window.location.pathname.startsWith("/OmniVis");
+                const prefix = isSubpath ? "/OmniVis" : "";
+                const res = await fetch(prefix + '/slidi/api/status', { method: 'GET', cache: 'no-store' });
                 const data = await res.json();
                 const ms = Date.now() - start;
                 latency.textContent = ms + 'ms';
@@ -352,8 +354,10 @@
         }
 
         // Run checks
-        checkStatus('Slidi', '/slidi/api/status', 'slidi-badge', 'slidi-latency');
-        checkStatus('Graphi', '/graphi/', 'graphi-badge', 'graphi-latency');
+        const isSubpath = window.location.pathname.startsWith("/OmniVis");
+        const prefix = isSubpath ? "/OmniVis" : "";
+        checkStatus('Slidi', prefix + '/slidi/api/status', 'slidi-badge', 'slidi-latency');
+        checkStatus('Graphi', prefix + '/graphi/', 'graphi-badge', 'graphi-latency');
         checkStorage();
     </script>
 </body>

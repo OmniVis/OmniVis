@@ -4,6 +4,8 @@
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title>OmniVis — High-Performance Creator Command Center</title>
+    <link rel="icon" type="image/x-icon" href="static/branding/launchpad_favicon.ico"/>
+    <link rel="icon" type="image/png" href="static/branding/launchpad_favicon.png"/>
     
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700;800;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"/>
@@ -23,6 +25,18 @@
                         secondary: '#0b1c30',    // Deep Ink / Absolute Black
                         bgNeutral: '#F5F7F9',     // Cloud Grey
                         borderNeutral: '#E2E8F0', // Soft structural boundaries
+                        gray: {
+                            50: '#f8fafc',
+                            100: '#f1f5f9',
+                            200: '#e2e8f0',
+                            300: '#cbd5e1',
+                            400: '#94a3b8',
+                            500: '#64748b',
+                            600: '#475569',
+                            700: '#334155',
+                            800: '#1e293b',
+                            900: '#0f172a',
+                        }
                     },
                     fontFamily: {
                         display: ['Hanken Grotesk', 'sans-serif'],
@@ -43,8 +57,12 @@
             font-family: 'Inter', sans-serif;
             background-color: #F5F7F9;
         }
+        .glow-active {
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
         .glow-active:hover {
-            box-shadow: 0 0 24px rgba(0, 80, 203, 0.08);
+            transform: translateY(-6px);
+            box-shadow: 0 20px 32px rgba(0, 80, 203, 0.08);
             border-color: #0050cb;
         }
         /* Modal transitions */
@@ -146,7 +164,7 @@
                 apiStatusText.innerText = "CHECKING";
 
                 try {
-                    const response = await fetch(`${cleanUrl}/api/health`, { method: "GET" });
+                    const response = await fetch(`${cleanUrl}/health`, { method: "GET" });
                     if (response.ok) {
                         const data = await response.json();
                         apiStatusDot.className = "w-2 h-2 rounded-full bg-emerald-500 mr-2";
@@ -229,14 +247,16 @@
         <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
             <div class="flex items-center space-x-12">
                 <!-- Branding Logo -->
-                <a href="#" class="flex items-center space-x-3 group">
-                    <span class="h-8 w-8 bg-secondary rounded-soft-sm flex items-center justify-center text-white font-display font-extrabold text-lg select-none tracking-tighter">O</span>
-                    <span class="font-display font-black text-xl tracking-tight text-secondary uppercase">Omni<span class="text-primary">Vis</span></span>
+                <a href="index.html" class="flex items-center space-x-3 group">
+                    <span class="h-8 w-8 bg-secondary rounded-soft-sm flex items-center justify-center text-white font-display font-extrabold text-lg select-none tracking-tighter transition-all duration-300 group-hover:scale-105 group-hover:bg-primary">O</span>
+                    <span class="font-display font-black text-xl tracking-tight text-secondary uppercase transition-colors duration-300 group-hover:text-primary">Omni<span class="text-primary group-hover:text-secondary">Vis</span></span>
                 </a>
                 <nav class="hidden md:flex space-x-8 text-sm font-semibold tracking-wide text-gray-500">
                     <a href="#" class="text-primary border-b-2 border-primary pb-1">Ecosystem</a>
                     <a href="https://github.com/OmniVis/OmniVis" target="_blank" class="hover:text-secondary transition-colors duration-200">GitHub Source</a>
                     <a href="#" class="open-docs-btn hover:text-secondary transition-colors duration-200">API Documentation</a>
+                    <a data-route="/status.html" class="hover:text-secondary transition-colors duration-200 cursor-pointer">System Status</a>
+                    <a data-route="/feedback.html" class="hover:text-secondary transition-colors duration-200 cursor-pointer">Send Feedback</a>
                 </nav>
             </div>
             
@@ -441,9 +461,9 @@
     <!-- Footer -->
     <footer class="w-full bg-white border-t border-borderNeutral mt-16 py-12">
         <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
-            <div class="flex items-center space-x-3">
-                <span class="h-6 w-6 bg-secondary rounded-soft-sm flex items-center justify-center text-white font-display font-extrabold text-xs select-none tracking-tighter">O</span>
-                <span class="font-display font-black text-sm tracking-tight text-secondary uppercase">Omni<span class="text-primary">Vis</span></span>
+            <div class="flex items-center space-x-3 group">
+                <span class="h-6 w-6 bg-secondary rounded-soft-sm flex items-center justify-center text-white font-display font-extrabold text-xs select-none tracking-tighter transition-all duration-300 group-hover:scale-105 group-hover:bg-primary">O</span>
+                <span class="font-display font-black text-sm tracking-tight text-secondary uppercase transition-colors duration-300 group-hover:text-primary">Omni<span class="text-primary group-hover:text-secondary">Vis</span></span>
             </div>
             <p class="font-body text-xs text-gray-400 text-center md:text-left">
                 © 2026 OmniVis visual command ecosystem. High-Performance creation architecture.
@@ -452,6 +472,8 @@
                 <a href="#" class="hover:text-secondary transition-all">Privacy</a>
                 <a href="#" class="hover:text-secondary transition-all">Terms</a>
                 <a href="https://github.com/OmniVis/OmniVis" class="hover:text-secondary transition-all">Source Repository</a>
+                <a data-route="/status.html" class="hover:text-secondary transition-all cursor-pointer">System Status</a>
+                <a data-route="/feedback.html" class="hover:text-secondary transition-all cursor-pointer">Send Feedback</a>
             </nav>
         </div>
     </footer>
@@ -498,7 +520,7 @@
                             <tbody class="font-mono text-xs divide-y divide-borderNeutral">
                                 <tr class="hover:bg-bgNeutral/30">
                                     <td class="p-3 text-emerald-600 font-bold">GET</td>
-                                    <td class="p-3">/api/health</td>
+                                    <td class="p-3">/health</td>
                                     <td class="p-3 text-gray-400">Public</td>
                                     <td class="p-3 text-gray-500">Gateway health verification check</td>
                                 </tr>
