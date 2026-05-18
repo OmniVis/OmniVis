@@ -1,0 +1,13 @@
+
+> slidi@0.1.0 test
+> vitest run --run
+
+
+ RUN  v4.1.4 C:/Users/berol/Projekte/AiTools/slidi
+
+
+ Test Files  10 passed (10)
+      Tests  137 passed (137)
+   Start at  12:00:07
+   Duration  1.09s (transform 1.73s, setup 488ms, import 1.96s, tests 272ms, environment 2ms)
+

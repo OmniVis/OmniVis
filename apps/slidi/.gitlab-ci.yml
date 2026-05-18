@@ -1,0 +1,89 @@
+stages:
+  - build
+  - build-image
+  - deploy
+
+variables:
+  NODE_ENV: "production"
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: ""
+  DEPLOY_DIR: "/opt/slidi"
+
+build-slidi:
+  stage: build
+  image: node:20-slim
+  script:
+    - npm install --include=dev
+    - npm run build
+  only:
+    - main
+    - master
+
+build-slidi-image:
+  stage: build-image
+  image: docker:24.0.5
+  services:
+    - docker:24.0.5-dind
+  before_script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login $CI_REGISTRY -u "$CI_REGISTRY_USER" --password-stdin
+  script:
+    - docker build -t "$CI_REGISTRY_IMAGE:latest" .
+    - docker push "$CI_REGISTRY_IMAGE:latest"
+  only:
+    - main
+    - master
+
+build-slidi-collab-image:
+  stage: build-image
+  image: docker:24.0.5
+  services:
+    - docker:24.0.5-dind
+  before_script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login $CI_REGISTRY -u "$CI_REGISTRY_USER" --password-stdin
+  script:
+    - docker build -f Dockerfile.collab -t "$CI_REGISTRY_IMAGE/collab:latest" .
+    - docker push "$CI_REGISTRY_IMAGE/collab:latest"
+  only:
+    - main
+    - master
+
+deploy-slidi-vm:
+  stage: deploy
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache openssh-client sshpass rsync
+    - mkdir -p ~/.ssh && chmod 700 ~/.ssh
+    - ssh-keyscan -H 10.1.101.43 >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+    - export SSHPASS="$SSH_PASSWORD"
+    - SSH_OPTS="-o StrictHostKeyChecking=no"
+    - SSHPASS_CMD="sshpass -e ssh $SSH_OPTS"
+  script:
+    - '$SSHPASS_CMD $SSH_USER@10.1.101.43 "sudo mkdir -p $DEPLOY_DIR && sudo chown $SSH_USER: $DEPLOY_DIR && sudo chmod 755 $DEPLOY_DIR"'
+    - 'echo "CI_REGISTRY_IMAGE=$CI_REGISTRY_IMAGE" > .env'
+    - 'echo "USER_ID_HMAC_SECRET=$USER_ID_HMAC_SECRET" >> .env'
+    - 'echo "DATA_ENCRYPTION_KEY=$DATA_ENCRYPTION_KEY" >> .env'
+    - 'echo "DB_PASSWORD=$DB_PASSWORD" >> .env'
+    - 'echo "WORKER_AUTH_TOKEN=$WORKER_AUTH_TOKEN" >> .env'
+    - 'echo "COLLAB_JWT_SECRET=$COLLAB_JWT_SECRET" >> .env'
+    - 'rsync -avz -e "sshpass -e ssh $SSH_OPTS" docker-compose.yml .env $SSH_USER@10.1.101.43:$DEPLOY_DIR/'
+    - '$SSHPASS_CMD $SSH_USER@10.1.101.43 "sudo podman login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY"'
+    - '$SSHPASS_CMD $SSH_USER@10.1.101.43 "cd $DEPLOY_DIR && sudo podman-compose pull"'
+    - '$SSHPASS_CMD $SSH_USER@10.1.101.43 "cd $DEPLOY_DIR && sudo podman-compose down && sudo podman-compose up -d"'
+    - '$SSHPASS_CMD $SSH_USER@10.1.101.43 "sudo podman image prune -f"'
+  after_script:
+    - echo "Deployment session finished"
+  only:
+    - main
+    - master
+
+# Required GitLab CI variables (Settings → CI/CD → Variables):
+#   DB_PASSWORD          — PostgreSQL password for the slidi user
+#                          generate with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+#   USER_ID_HMAC_SECRET  — random string used to HMAC-SHA256 user UUIDs before DB storage
+#                          generate with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+#   DATA_ENCRYPTION_KEY  — 64-char hex key (32 bytes) for AES-256-GCM encryption of usernames
+#                          generate with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+#   WORKER_AUTH_TOKEN    — shared secret used to protect /api/admin/* endpoints
+#   COLLAB_JWT_SECRET    — shared secret for collab WebSocket JWT tokens (slidi ↔ slidi-collab)
+#                          generate with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"

@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-geist-sans: system-ui, -apple-system, sans-serif;
+  --font-geist-mono: 'Courier New', Courier, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ── Sandpack code editor scroll fix ────────────────────────────────────────
+   SandpackProvider renders a <div class="sp-wrapper"> between our flex root
+   and the editor container, breaking the flex height chain. Fix each layer:
+   sp-wrapper → flex-1 column → editor container → sp-code-editor → cm-editor
+   → cm-scroller (the actual scroll surface). */
+
+/* 1. sp-wrapper must participate in the parent flex column and become its own */
+.sp-wrapper {
+  flex: 1 !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* 2. sp-code-editor fills its flex parent */
+.sp-code-editor {
+  flex: 1 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+/* 3. cm-editor must have a definite height so cm-scroller clips content */
+.sp-code-editor .cm-editor {
+  height: 100% !important;
+}
+
+/* 4. cm-scroller is the real scroll surface */
+.sp-code-editor .cm-scroller {
+  overflow-y: auto !important;
+}

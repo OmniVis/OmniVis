@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Page Not Found | AI Tools Hub</title>
+    <link rel="icon" type="image/x-icon" href="/branding/launchpad_favicon.ico">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+        :root {
+            --bg-color: #FDFDFD;
+            --accent-1: #0f172a;
+            --text-primary: #0f172a;
+            --text-secondary: #64748b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 600px;
+            padding: 2rem;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .logo-container {
+            margin-bottom: 3rem;
+        }
+
+        .logo-container img {
+            height: 54px;
+            width: auto;
+        }
+
+        .error-code {
+            font-size: 10rem;
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: 1rem;
+            letter-spacing: -0.05em;
+            background: linear-gradient(135deg, var(--accent-1) 0%, #334155 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            opacity: 0.9;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 3rem;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            background: var(--accent-1);
+            color: white;
+            padding: 1.25rem 2.5rem;
+            border-radius: 100px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 10px 30px -10px rgba(15, 23, 42, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.4);
+            background: #1e293b;
+        }
+
+        .background-element {
+            position: absolute;
+            z-index: -1;
+            opacity: 0.03;
+            pointer-events: none;
+        }
+
+        .bg-1 {
+            top: 10%;
+            left: 10%;
+            font-size: 20rem;
+            font-weight: 900;
+            transform: rotate(-15deg);
+        }
+
+        .bg-2 {
+            bottom: 10%;
+            right: 10%;
+            font-size: 15rem;
+            font-weight: 900;
+            transform: rotate(10deg);
+        }
+    </style>
+</head>
+<body>
+    <div class="background-element bg-1">404</div>
+    <div class="background-element bg-2">?</div>
+
+    <div class="container">
+        <div class="logo-container">
+            <img src="/branding/launchpad-logo-lockup-on-light.png" alt="AI Tools Hub">
+        </div>
+        
+        <div class="error-code">404</div>
+        <h1>Page Not Found</h1>
+        <p>The tool or utility you are looking for doesn't exist yet, or has been moved to a new location within the hub.</p>
+        
+        <a href="/" class="btn">Return to Hub</a>
+    </div>
+</body>
+</html>

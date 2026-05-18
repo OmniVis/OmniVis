@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: docker.io/library/postgres:16-alpine
+    container_name: tools-slidi-db
+    restart: always
+    environment:
+      - POSTGRES_DB=slidi
+      - POSTGRES_USER=slidi
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - slidi_db:/var/lib/postgresql/data
+    # Uncomment to expose locally for DB inspection:
+    # ports:
+    #   - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U slidi -d slidi"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - aitools_net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  slidi:
+    image: ${CI_REGISTRY_IMAGE}:latest
+    container_name: tools-slidi
+    restart: always
+    depends_on:
+      - postgres
+    environment:
+      - DATABASE_URL=postgresql://slidi:${DB_PASSWORD}@tools-slidi-db:5432/slidi
+      - USER_ID_HMAC_SECRET=${USER_ID_HMAC_SECRET}
+      - DATA_ENCRYPTION_KEY=${DATA_ENCRYPTION_KEY}
+      - WORKER_AUTH_TOKEN=${WORKER_AUTH_TOKEN}
+      - COLLAB_JWT_SECRET=${COLLAB_JWT_SECRET}
+    networks:
+      - aitools_net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  slidi-collab:
+    image: ${CI_REGISTRY_IMAGE}/collab:latest
+    container_name: tools-slidi-collab
+    restart: always
+    environment:
+      - PORT=3001
+      - COLLAB_JWT_SECRET=${COLLAB_JWT_SECRET}
+    networks:
+      - aitools_net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    # NGINX note: proxy /slidi/collab → http://slidi-collab:3001 with WS upgrade headers:
+    #   proxy_http_version 1.1;
+    #   proxy_set_header Upgrade $http_upgrade;
+    #   proxy_set_header Connection "upgrade";
+
+volumes:
+  slidi_db:
+
+networks:
+  aitools_net:
+    external: true

@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  # NGINX Gateway - routes / to launchpad, /graphi/ to graphi, /slidi/ to slidi
+  proxy:
+    image: docker.io/library/nginx:alpine
+    container_name: tools-gateway
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro,z
+    depends_on:
+      - launchpad
+    restart: always
+    networks:
+      - aitools_net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Landing Page
+  launchpad:
+    image: ${LAUNCHPAD_IMAGE}
+    container_name: tools-landing
+    restart: always
+    networks:
+      - aitools_net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  aitools_net:
+    external: true

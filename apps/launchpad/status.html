@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Status | AI Tools Hub</title>
+    <link rel="icon" type="image/x-icon" href="/branding/launchpad_favicon.ico">
+    <link rel="icon" type="image/png" href="/branding/launchpad_favicon.png">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+        :root {
+            --bg-color: #FDFDFD;
+            --card-bg: #ffffff;
+            --card-border: rgba(15, 23, 42, 0.08);
+            --accent-1: #0f172a;
+            --text-primary: #0f172a;
+            --text-secondary: #64748b;
+            --shadow-premium: 0 10px 30px -10px rgba(0, 0, 0, 0.04);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            padding: 0.75rem 4rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(15, 23, 42, 0.05);
+            background: rgba(253, 253, 253, 0.8);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .logo-container a {
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-primary);
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .logo-container img {
+            height: 24px;
+        }
+
+        main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+            width: 100%;
+            flex-grow: 1;
+        }
+
+        .hero-text {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .hero-text h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .hero-text p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .status-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            box-shadow: var(--shadow-premium);
+            transition: transform 0.2s;
+        }
+
+        .status-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .app-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .status-badge {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 0.25rem 0.75rem;
+            border-radius: 100px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .status-operational {
+            background: #f0fdf4;
+            color: #16a34a;
+            border: 1px solid rgba(22, 163, 74, 0.1);
+        }
+
+        .status-degraded {
+            background: #fffbeb;
+            color: #d97706;
+            border: 1px solid rgba(217, 119, 6, 0.1);
+        }
+
+        .status-error {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid rgba(220, 38, 38, 0.1);
+        }
+
+        .status-checking {
+            background: #f8fafc;
+            color: #64748b;
+            border: 1px solid rgba(100, 116, 139, 0.1);
+        }
+
+        .card-body {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .card-footer {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            border-top: 1px solid rgba(15, 23, 42, 0.04);
+            padding-top: 0.75rem;
+            margin-top: auto;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            border-top: 1px solid rgba(15, 23, 42, 0.05);
+        }
+
+        .pulse {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .status-operational .pulse { background: #16a34a; }
+        .status-degraded .pulse { background: #d97706; }
+        .status-error .pulse { background: #dc2626; }
+        .status-checking .pulse { background: #94a3b8; animation: pulse 1s infinite; }
+
+        @keyframes pulse {
+            0% { opacity: 0.3; }
+            50% { opacity: 1; }
+            100% { opacity: 0.3; }
+        }
+
+        @media (max-width: 768px) {
+            header { padding: 0.75rem 1.5rem; }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="logo-container">
+            <a href="/">
+                <img src="/branding/launchpad-logo-lockup-on-light.png" alt="AI Hub Logo">
+                <span>Status</span>
+            </a>
+        </div>
+        <a href="/" style="text-decoration: none; color: var(--text-secondary); font-size: 0.9rem;">Back to Hub</a>
+    </header>
+
+    <main>
+        <div class="hero-text">
+            <h1>System Status</h1>
+            <p>Live status of all AI Tools applications.</p>
+        </div>
+
+        <div class="status-grid">
+            <!-- Launchpad -->
+            <div class="status-card">
+                <div class="card-header">
+                    <div class="app-title">Launchpad</div>
+                    <span class="status-badge status-operational"><span class="pulse"></span>Operational</span>
+                </div>
+                <div class="card-body">
+                    The central landing page and mission control for all tools.
+                </div>
+                <div class="card-footer">
+                    <span>Type: Static Hub</span>
+                    <span id="launchpad-latency"><1ms</span>
+                </div>
+            </div>
+
+            <!-- Slidi -->
+            <div class="status-card">
+                <div class="card-header">
+                    <div class="app-title">Slidi</div>
+                    <span id="slidi-badge" class="status-badge status-checking"><span class="pulse"></span>Checking</span>
+                </div>
+                <div class="card-body">
+                    Next-generation presentation builder. Generate interactive web-based slides.
+                </div>
+                <div class="card-footer">
+                    <span>Type: Next.js App</span>
+                    <span id="slidi-latency">--</span>
+                </div>
+            </div>
+
+            <!-- Graphi -->
+            <div class="status-card">
+                <div class="card-header">
+                    <div class="app-title">Graphi</div>
+                    <span id="graphi-badge" class="status-badge status-checking"><span class="pulse"></span>Checking</span>
+                </div>
+                <div class="card-body">
+                    Data visualization and graph editor powered by AI.
+                </div>
+                <div class="card-footer">
+                    <span>Type: Web App</span>
+                    <span id="graphi-latency">--</span>
+                </div>
+            </div>
+
+            <!-- Server Storage -->
+            <div class="status-card">
+                <div class="card-header">
+                    <div class="app-title">Server Storage</div>
+                    <span id="storage-badge" class="status-badge status-checking"><span class="pulse"></span>Checking</span>
+                </div>
+                <div class="card-body" id="storage-body">
+                    Fetching storage info...
+                </div>
+                <div class="card-footer">
+                    <span>Type: Disk Space</span>
+                    <span id="storage-latency">--</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div class="footer">
+        © 2026 Adesso Group. All systems monitored.
+    </div>
+
+    <script>
+        async function checkStatus(app, endpoint, badgeId, latencyId) {
+            const start = Date.now();
+            const badge = document.getElementById(badgeId);
+            const latency = document.getElementById(latencyId);
+            
+            try {
+                const res = await fetch(endpoint, { method: 'GET', cache: 'no-store' });
+                const ms = Date.now() - start;
+                latency.textContent = ms + 'ms';
+                
+                if (res.ok) {
+                    badge.className = 'status-badge status-operational';
+                    badge.innerHTML = '<span class="pulse"></span>Operational';
+                } else {
+                    badge.className = 'status-badge status-degraded';
+                    badge.innerHTML = '<span class="pulse"></span>Degraded (' + res.status + ')';
+                }
+            } catch (err) {
+                latency.textContent = '--';
+                badge.className = 'status-badge status-error';
+                badge.innerHTML = '<span class="pulse"></span>Offline';
+            }
+        }
+
+        async function checkStorage() {
+            const badge = document.getElementById('storage-badge');
+            const body = document.getElementById('storage-body');
+            const latency = document.getElementById('storage-latency');
+            const start = Date.now();
+            
+            try {
+                const res = await fetch('/slidi/api/status', { method: 'GET', cache: 'no-store' });
+                const data = await res.json();
+                const ms = Date.now() - start;
+                latency.textContent = ms + 'ms';
+                
+                const diskCheck = data.checks.find(c => c.name === "Disk Usage");
+                if (diskCheck) {
+                    body.textContent = diskCheck.message;
+                    if (diskCheck.status === 'ok') {
+                        badge.className = 'status-badge status-operational';
+                        badge.innerHTML = '<span class="pulse"></span>Normal';
+                    } else if (diskCheck.status === 'degraded') {
+                        badge.className = 'status-badge status-degraded';
+                        badge.innerHTML = '<span class="pulse"></span>Warning';
+                    } else {
+                        badge.className = 'status-badge status-error';
+                        badge.innerHTML = '<span class="pulse"></span>Critical';
+                    }
+                } else {
+                    body.textContent = "Storage info not found in status response.";
+                    badge.className = 'status-badge status-error';
+                    badge.innerHTML = '<span class="pulse"></span>Error';
+                }
+            } catch (err) {
+                body.textContent = "Failed to fetch storage info.";
+                badge.className = 'status-badge status-error';
+                badge.innerHTML = '<span class="pulse"></span>Offline';
+            }
+        }
+
+        // Run checks
+        checkStatus('Slidi', '/slidi/api/status', 'slidi-badge', 'slidi-latency');
+        checkStatus('Graphi', '/graphi/', 'graphi-badge', 'graphi-latency');
+        checkStorage();
+    </script>
+</body>
+
+</html>

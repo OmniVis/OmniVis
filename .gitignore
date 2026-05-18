@@ -1,0 +1,10 @@
+# Root-level gitignore for OmniVis monorepo
+node_modules/
+.DS_Store
+
+# Exclude git backup folders used during monorepo setup
+.git_bak/
+apps/**/.git_bak/
+
+# Build outputs (managed per-app)
+dist/
