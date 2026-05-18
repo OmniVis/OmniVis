@@ -38,7 +38,7 @@ jobs:
 
       - name: Build Graphi
         env:
-          BASE_PATH: /graphi
+          BASE_PATH: /OmniVis/graphi
           HUSKY: "0"
         run: |
           cd apps/graphi
@@ -50,7 +50,7 @@ jobs:
           
       - name: Build Slidi
         env:
-          NEXT_BASE_PATH: /slidi
+          NEXT_BASE_PATH: /OmniVis/slidi
           HUSKY: "0"
         run: |
           cd apps/slidi
