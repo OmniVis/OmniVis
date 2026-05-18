@@ -133,7 +133,7 @@
 
                 // Populate worker URL (default placeholder if empty)
                 if (workerUrlInput) {
-                    workerUrlInput.value = savedWorkerUrl || "https://omnivis-api.berol.workers.dev";
+                    workerUrlInput.value = savedWorkerUrl || "https://omnivis-api.thatzane.workers.dev";
                 }
 
                 updateKeyStatus(oKey || aKey);
@@ -155,7 +155,7 @@
 
             // Test Worker Health Check
             const testWorkerHealth = async () => {
-                const url = localStorage.getItem("omnivis_worker_url") || "https://omnivis-api.berol.workers.dev";
+                const url = localStorage.getItem("omnivis_worker_url") || "https://omnivis-api.thatzane.workers.dev";
                 
                 // Strip trailing slash if present
                 const cleanUrl = url.replace(/\/$/, "");
@@ -202,7 +202,7 @@
                     workerUrlInput.value = formattedUrl;
                 } else {
                     localStorage.removeItem("omnivis_worker_url");
-                    workerUrlInput.value = "https://omnivis-api.berol.workers.dev";
+                    workerUrlInput.value = "https://omnivis-api.thatzane.workers.dev";
                 }
 
                 statusIndicator.innerHTML = `
@@ -223,7 +223,7 @@
                 
                 openaiKeyInput.value = "";
                 anthropicKeyInput.value = "";
-                workerUrlInput.value = "https://omnivis-api.berol.workers.dev";
+                workerUrlInput.value = "https://omnivis-api.thatzane.workers.dev";
                 
                 statusIndicator.innerHTML = `
                     <span class="inline-block w-2.5 h-2.5 rounded-full bg-rose-500 mr-2"></span>
