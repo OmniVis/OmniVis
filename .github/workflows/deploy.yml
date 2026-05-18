@@ -24,7 +24,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
@@ -42,7 +42,8 @@ jobs:
           HUSKY: "0"
         run: |
           cd apps/graphi
-          pnpm install --no-frozen-lockfile
+          pnpm install --ignore-scripts --no-frozen-lockfile
+          pnpm exec svelte-kit sync
           pnpm run build
           mkdir -p ../../dist/graphi
           cp -r build/. ../../dist/graphi/
