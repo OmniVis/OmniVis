@@ -10,23 +10,33 @@ aiRoute.post('/generate/slides', async (c) => {
     slide_count?: number;
     theme?: string;
     provider?: 'openai' | 'anthropic';
+    openai_api_key?: string;
+    anthropic_api_key?: string;
   }>();
 
   if (!body.prompt) return c.json({ error: 'prompt is required' }, 400);
 
-  const provider = body.provider ?? (c.env.OPENAI_API_KEY ? 'openai' : 'anthropic');
+  // Bring Your Own Key (BYOK) parsing: check Header first, then Request Body, then Env secret
+  const openAiKey = c.req.header('x-openai-api-key') || body.openai_api_key || c.env.OPENAI_API_KEY;
+  const anthropicKey = c.req.header('x-anthropic-api-key') || body.anthropic_api_key || c.env.ANTHROPIC_API_KEY;
+
+  const provider = body.provider ?? (openAiKey ? 'openai' : 'anthropic');
 
   if (provider === 'openai') {
-    if (!c.env.OPENAI_API_KEY) return c.json({ error: 'OpenAI not configured' }, 503);
-    return generateWithOpenAI(c.env.OPENAI_API_KEY, body.prompt, body.slide_count ?? 5, c);
+    if (!openAiKey) {
+      return c.json({ error: 'OpenAI API key missing. Provide it in x-openai-api-key header, request body, or server environment.' }, 400);
+    }
+    return generateWithOpenAI(openAiKey, body.prompt, body.slide_count ?? 5, c);
   }
 
   if (provider === 'anthropic') {
-    if (!c.env.ANTHROPIC_API_KEY) return c.json({ error: 'Anthropic not configured' }, 503);
-    return generateWithAnthropic(c.env.ANTHROPIC_API_KEY, body.prompt, body.slide_count ?? 5, c);
+    if (!anthropicKey) {
+      return c.json({ error: 'Anthropic API key missing. Provide it in x-anthropic-api-key header, request body, or server environment.' }, 400);
+    }
+    return generateWithAnthropic(anthropicKey, body.prompt, body.slide_count ?? 5, c);
   }
 
-  return c.json({ error: 'No AI provider configured. Set OPENAI_API_KEY or ANTHROPIC_API_KEY.' }, 503);
+  return c.json({ error: 'No AI provider configured or keys provided.' }, 400);
 });
 
 // ─── Generate / repair Mermaid diagram (Graphi) ──────────────────────────────
@@ -36,6 +46,8 @@ aiRoute.post('/generate/diagram', async (c) => {
     existing_code?: string;  // For AI repair mode
     diagram_type?: string;
     provider?: 'openai' | 'anthropic';
+    openai_api_key?: string;
+    anthropic_api_key?: string;
   }>();
 
   if (!body.prompt) return c.json({ error: 'prompt is required' }, 400);
@@ -45,21 +57,29 @@ Return ONLY valid Mermaid diagram code, no markdown fences, no explanation.
 Diagram type requested: ${body.diagram_type ?? 'auto-detect'}.
 ${body.existing_code ? `Existing code to fix:\n${body.existing_code}` : ''}`;
 
-  const provider = body.provider ?? (c.env.OPENAI_API_KEY ? 'openai' : 'anthropic');
+  // Bring Your Own Key (BYOK) parsing
+  const openAiKey = c.req.header('x-openai-api-key') || body.openai_api_key || c.env.OPENAI_API_KEY;
+  const anthropicKey = c.req.header('x-anthropic-api-key') || body.anthropic_api_key || c.env.ANTHROPIC_API_KEY;
+
+  const provider = body.provider ?? (openAiKey ? 'openai' : 'anthropic');
 
   if (provider === 'openai') {
-    if (!c.env.OPENAI_API_KEY) return c.json({ error: 'OpenAI not configured' }, 503);
-    const code = await callOpenAI(c.env.OPENAI_API_KEY, systemPrompt, body.prompt);
+    if (!openAiKey) {
+      return c.json({ error: 'OpenAI API key missing. Provide it in x-openai-api-key header, request body, or server environment.' }, 400);
+    }
+    const code = await callOpenAI(openAiKey, systemPrompt, body.prompt);
     return c.json({ code });
   }
 
   if (provider === 'anthropic') {
-    if (!c.env.ANTHROPIC_API_KEY) return c.json({ error: 'Anthropic not configured' }, 503);
-    const code = await callAnthropic(c.env.ANTHROPIC_API_KEY, systemPrompt, body.prompt);
+    if (!anthropicKey) {
+      return c.json({ error: 'Anthropic API key missing. Provide it in x-anthropic-api-key header, request body, or server environment.' }, 400);
+    }
+    const code = await callAnthropic(anthropicKey, systemPrompt, body.prompt);
     return c.json({ code });
   }
 
-  return c.json({ error: 'No AI provider configured' }, 503);
+  return c.json({ error: 'No AI provider configured or keys provided.' }, 400);
 });
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
