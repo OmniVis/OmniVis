@@ -123,18 +123,37 @@ useEffect(() => {
     • targets accepts a CSS selector string, a DOM element, or a NodeList
     • anime.setDashoffset is a function value — pass it directly, no call needed
 EXTERNAL GRAPHICS & ICONS (CRITICAL):
-Do NOT attempt to write complex SVG paths (like cars, people, or globes) from scratch. You will hallucinate and fail. Use these two libraries instead:
+Do NOT attempt to write complex SVG paths (like cars, people, or globes) from scratch. You will hallucinate and fail. Use these two libraries instead.
 
-1. UI Icons & Simple Vector Shapes (Material Symbols):
-   Available globally. Use for generic icons (e.g., car, rocket, analytics, warning).
-   Syntax: <span className="material-symbols-rounded" style={{ fontSize: '120px', color: 'var(--sl-accent)' }}>directions_car</span>
-   Common names: directions_car, lightbulb, rocket_launch, bar_chart, monitoring, public, group.
+DECISION RULE — choose by topic:
+• Generic UI concept (chart, idea, settings, warning, user) → use Material Symbols (option 1)
+• Specific / themed subject (racing car, food, animal, sport, flag, face) → use Iconify twemoji (option 2)
+When in doubt, always prefer twemoji — its names map directly to emoji and are always correct.
 
-2. Brand Logos & Emojis (Iconify API):
-   Use for specific brand logos or multi-colored icons (e.g., React logo, Twitter, colored emojis).
-   Syntax: <img src="https://api.iconify.design/[set]/[icon].svg" className="w-32 h-32" alt="icon" />
-   Example Logos: logos:react, logos:javascript, logos:aws
-   Example Emojis: twemoji:oncoming-automobile, twemoji:rocket
+1. Material Symbols (generic UI icons — available globally as a font):
+   Syntax: <span className="material-symbols-rounded" style={{ fontSize: '120px', color: 'var(--sl-accent)' }}>ICON_NAME</span>
+   ONLY use names from this verified list — do NOT invent names:
+   Analytics / data:  bar_chart, monitoring, trending_up, leaderboard, analytics, query_stats
+   Ideas / learning:  lightbulb, school, auto_stories, psychology, science, biotech
+   Tech / devices:    devices, smartphone, computer, cloud, memory, settings, code, terminal
+   People / org:      group, person, manage_accounts, handshake, diversity_3, corporate_fare
+   Navigation / place: public, location_on, map, travel_explore, flight, directions_car, train
+   Action / process:  rocket_launch, bolt, check_circle, flag, timer, schedule, loop, play_arrow
+   Warning / status:  warning, error, info, shield, lock, verified, star
+
+2. Iconify twemoji (emoji-based — best for specific/themed subjects):
+   Syntax: <img src="https://api.iconify.design/twemoji/ICON_NAME.svg" className="w-32 h-32" alt="icon" />
+   Map the topic to its emoji name (hyphenated, lowercase):
+   Motorsport / F1:   racing-car, chequered-flag, stopwatch, trophy, fuel-pump
+   Sports:            soccer-ball, basketball, tennis, bicycle, trophy
+   Vehicles:          automobile, airplane, rocket, ship, train, motorcycle
+   Nature / animals:  globe-showing-europe-africa, evergreen-tree, water-wave, lion-face
+   Food / drink:      pizza, hamburger, sushi, coffee, wine-glass
+   Tech / science:    laptop-computer, robot, dna, microscope, satellite-antenna
+   Flags:             flag-[country-code] (e.g. flag-de, flag-us, flag-gb)
+   Faces / emotion:   fire, star-struck, flexed-biceps, partying-face, trophy
+   Brand logos (logos set): <img src="https://api.iconify.design/logos/ICON_NAME.svg" ... />
+   Logo examples: react, javascript, typescript, aws, python, figma, github
 
 27. In-slide tabs for multi-faceted content (tab clicks do NOT navigate slides):
 \`\`\`jsx
