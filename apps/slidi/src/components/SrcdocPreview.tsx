@@ -166,6 +166,7 @@ export function buildSrcdoc(code: string, theme: ThemeId, branding: Branding | n
       };
     })();
   </script>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     /* Extend Tailwind with sl-* color utilities mapped to the theme CSS vars.

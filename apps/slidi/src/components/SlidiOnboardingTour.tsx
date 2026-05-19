@@ -138,7 +138,7 @@ export default function SlidiOnboardingTour() {
   useEffect(() => {
     setMounted(true);
     const seen = localStorage.getItem(ONBOARDING_SEEN_KEY);
-    let timer: ReturnType<typeof setTimeout> | undefined;
+    let timer: NodeJS.Timeout;
     if (!seen) {
       timer = setTimeout(() => {
         setShowWelcome(true);
@@ -291,7 +291,7 @@ export default function SlidiOnboardingTour() {
     <>
       {/* ── Welcome Toast Card ── */}
       {showWelcome && (
-        <div className="fixed bottom-6 right-6 z-[200] max-w-sm w-[calc(100vw-3rem)] rounded-2xl border border-slate-200/80 bg-white/95 backdrop-blur-md shadow-[0_20px_50px_rgba(15,23,42,0.12)] p-6 sm:p-7 flex flex-col gap-5 overflow-hidden animate-in slide-in-from-bottom-12 duration-700 ease-out">
+        <div className="fixed bottom-6 right-6 z-[200] max-w-sm w-[calc(100vw-3rem)] rounded-2xl border border-slate-200/80 bg-white/95 backdrop-blur-md shadow-[0_20px_50px_rgba(15,23,42,0.12)] p-6 sm:p-7 flex flex-col gap-5 relative overflow-hidden animate-in slide-in-from-bottom-12 duration-700 ease-out">
           <div className="absolute -top-10 -right-10 w-24 h-24 bg-violet-400/10 rounded-full blur-xl pointer-events-none" />
 
           <div className="flex items-start gap-4">

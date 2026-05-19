@@ -17,6 +17,7 @@
   import GeminiIcon from '$lib/icons/GeminiIcon.svelte';
   import ClaudeIcon from '$lib/icons/ClaudeIcon.svelte';
   import OpenAIIcon from '$lib/icons/OpenAIIcon.svelte';
+  import AdessoIcon from '$lib/icons/AdessoIcon.svelte';
   import { cn } from '$lib/utils';
   import { toast } from 'svelte-sonner';
 
@@ -31,15 +32,21 @@
 
   // Config state
   let config = $state<AIServiceConfig>({
-    provider: 'gemini',
+    provider: 'adesso',
     keys: {},
     model: ''
   });
 
-  let selectedProvider = $state<'gemini' | 'openai' | 'anthropic'>('gemini');
+  let selectedProvider = $state<'gemini' | 'openai' | 'anthropic' | 'adesso'>('adesso');
   let showKey = $state(false);
 
   const providers = [
+    {
+      id: 'adesso',
+      label: 'adesso AI Hub',
+      icon: AdessoIcon,
+      url: 'https://adesso-ai-hub.3asabc.de/'
+    },
     {
       id: 'gemini',
       label: 'Google Gemini',

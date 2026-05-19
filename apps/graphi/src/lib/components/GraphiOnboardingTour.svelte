@@ -216,7 +216,7 @@
   <!-- ── Welcome Toast Card ── -->
   {#if showWelcome}
     <div
-      class="fixed right-6 bottom-6 z-[200] flex w-[calc(100vw-3rem)] max-w-sm flex-col gap-5 overflow-hidden rounded-2xl border border-slate-200/80 bg-white/95 p-6 shadow-[0_20px_50px_rgba(15,23,42,0.12)] backdrop-blur-md transition-all duration-500 ease-out sm:p-7">
+      class="fixed relative right-6 bottom-6 z-[200] flex w-[calc(100vw-3rem)] max-w-sm flex-col gap-5 overflow-hidden rounded-2xl border border-slate-200/80 bg-white/95 p-6 shadow-[0_20px_50px_rgba(15,23,42,0.12)] backdrop-blur-md transition-all duration-500 ease-out sm:p-7">
       <div
         class="pointer-events-none absolute -top-10 -right-10 h-24 w-24 rounded-full bg-indigo-400/10 blur-xl" />
 

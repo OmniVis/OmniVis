@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useSlidiStore } from "@/store/slidiStore";
 import { useDebounce } from "@/hooks/useDebounce";
-import { Upload, X } from "lucide-react";
+import { Palette, Upload, Globe, Box, X, Building2, ChevronRight, Search } from "lucide-react";
+import { BRANDING_LIBRARY, BRANDING_CATEGORIES } from "@/lib/brandingAssets";
 import { putAsset } from "@/lib/idb";
 import { useLogoUrl } from "@/hooks/useLogoUrl";
 
@@ -19,13 +20,33 @@ export default function BrandingManager({ onClose, hideHeader }: BrandingManager
   const [logoUrl, setLogoUrl] = useState(branding?.logoUrl || "");
   const [display, setDisplay] = useState<"both" | "logo" | "name" | "none">(branding?.display ?? "both");
   const [position, setPosition] = useState<"top-left" | "top-right" | "bottom-left" | "bottom-right">(branding?.position ?? "top-right");
-  const [type] = useState<"pill" | "image">("pill");
-  const [size] = useState<"small" | "medium" | "large">(branding?.size ?? "medium");
+  const [type, setType] = useState<"pill" | "image">(branding?.type ?? "pill");
+  const [size, setSize] = useState<"small" | "medium" | "large">(branding?.size ?? "medium");
   const [sizePercentage, setSizePercentage] = useState<number>(branding?.sizePercentage ?? 100);
   const [padding, setPadding] = useState<number>(branding?.padding ?? 24);
+  const [selectedCategory, setSelectedCategory] = useState<string>(BRANDING_CATEGORIES[0]);
+  const [searchQuery, setSearchQuery] = useState("");
   
+  const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
   const resolvedLogoUrl = useLogoUrl(logoUrl) ?? logoUrl;
+  const [presets, setPresets] = useState<any[]>([]);
+  const [isPublishing, setIsPublishing] = useState(false);
   const [msg, setMsg] = useState("");
+
+  const fetchPresets = async () => {
+    try {
+      // Ensure the URL is absolute relative to the domain to avoid relative path issues
+      const url = `${BASE}/api/branding/presets`.replace(/\/+/g, "/");
+      const res = await fetch(url);
+      if (!res.ok) return;
+      const data = await res.json();
+      setPresets(data);
+    } catch (err) {
+      console.error("Fetch presets failed:", err);
+    }
+  };
+
+  useEffect(() => { fetchPresets(); }, []);
 
   // One-time migration: if existing branding stores a base64 logo, move it to IDB
   useEffect(() => {
@@ -76,6 +97,19 @@ export default function BrandingManager({ onClose, hideHeader }: BrandingManager
     setBranding(null);
     setMsg("Branding removed.");
     setTimeout(() => setMsg(""), 3000);
+  };
+
+  const handlePublish = async () => {
+    setIsPublishing(true);
+    try {
+      const res = await fetch(`${BASE}/api/branding/publish`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...buildBranding(), authorName: "Local User" })
+      });
+      if (res.ok) { setMsg("Published to community!"); fetchPresets(); }
+    } catch { setMsg("Publish failed."); }
+    finally { setIsPublishing(false); setTimeout(() => setMsg(""), 3000); }
   };
 
   const DISPLAY_OPTIONS: { value: "both" | "logo" | "name" | "none"; label: string; desc: string }[] = [
@@ -133,7 +167,7 @@ export default function BrandingManager({ onClose, hideHeader }: BrandingManager
               <input
                 type="text"
                 value={name}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
+                onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. Acme Corp"
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-[13px] focus:outline-none focus:border-blue-500/50"
               />
@@ -156,6 +190,29 @@ export default function BrandingManager({ onClose, hideHeader }: BrandingManager
             </div>
           </div>
 
+          <div className="space-y-2">
+            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Type</label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setType("pill")}
+                className={`py-2 rounded-xl border text-[10px] font-bold uppercase tracking-widest transition-all ${type === "pill"
+                    ? "bg-slate-900 border-slate-900 text-white shadow-sm"
+                    : "bg-white border-slate-200 text-slate-500 hover:border-slate-300"
+                  }`}
+              >
+                Pill
+              </button>
+              <button
+                onClick={() => setType("image")}
+                className={`py-2 rounded-xl border text-[10px] font-bold uppercase tracking-widest transition-all ${type === "image"
+                    ? "bg-slate-900 border-slate-900 text-white shadow-sm"
+                    : "bg-white border-slate-200 text-slate-500 hover:border-slate-300"
+                  }`}
+              >
+                Standard
+              </button>
+            </div>
+          </div>
 
           {(type === "image" || type === "pill") && (
             <div className="space-y-6 animate-in fade-in duration-300">
@@ -171,7 +228,7 @@ export default function BrandingManager({ onClose, hideHeader }: BrandingManager
                     max="150"
                     step="5"
                     value={sizePercentage}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSizePercentage(parseInt(e.target.value, 10))}
+                    onChange={(e) => setSizePercentage(parseInt(e.target.value, 10))}
                     onMouseUp={syncSliders}
                     onTouchEnd={syncSliders}
                     className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-blue-600 hover:accent-blue-700 transition-all"
@@ -198,7 +255,7 @@ export default function BrandingManager({ onClose, hideHeader }: BrandingManager
                     max="100"
                     step="4"
                     value={padding}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPadding(parseInt(e.target.value, 10))}
+                    onChange={(e) => setPadding(parseInt(e.target.value, 10))}
                     onMouseUp={syncSliders}
                     onTouchEnd={syncSliders}
                     className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-blue-600 hover:accent-blue-700 transition-all"
@@ -277,6 +334,152 @@ export default function BrandingManager({ onClose, hideHeader }: BrandingManager
           </div>
           {msg && <p className="text-[10px] text-blue-600 font-bold uppercase text-center">{msg}</p>}
         </div>
+
+        {type === "image" ? (
+          <div className="space-y-4 pt-4 border-t border-slate-100 animate-in slide-in-from-bottom-2 duration-300">
+            <div className="flex items-center justify-between px-1">
+              <h4 className="text-[11px] font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                <Building2 className="w-3.5 h-3.5 text-blue-600" /> Corporate Library
+              </h4>
+            </div>
+
+            {/* Search and Filter Area */}
+            <div className="space-y-3">
+              <div className="relative group">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                <input
+                  type="text"
+                  placeholder="Search logos..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-100 rounded-xl pl-9 pr-4 py-2 text-[11px] focus:outline-none focus:border-blue-500/30 focus:bg-white transition-all shadow-inner"
+                />
+              </div>
+
+              {!searchQuery && (
+                <div className="flex gap-1 overflow-x-auto pb-1 scrollbar-hide">
+                  {BRANDING_CATEGORIES.map(cat => (
+                    <button
+                      key={cat}
+                      onClick={() => setSelectedCategory(cat)}
+                      className={`px-3 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-wider whitespace-nowrap transition-all active:scale-[0.95] ${
+                        selectedCategory === cat 
+                        ? "bg-slate-900 text-white shadow-md shadow-slate-200" 
+                        : "bg-slate-50 text-slate-500 hover:bg-slate-100"
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 gap-2 max-h-[400px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
+              {BRANDING_LIBRARY
+                .filter(item => {
+                  const matchesSearch = item.displayName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                                      item.category.toLowerCase().includes(searchQuery.toLowerCase());
+                  if (searchQuery) return matchesSearch;
+                  return item.category === selectedCategory;
+                })
+                .map((item) => (
+                <button
+                  key={item.filename}
+                  onClick={() => {
+                    setLogoUrl(item.url);
+                    setType("image");
+                    setDisplay("logo");
+                    setBranding({
+                      ...buildBranding(),
+                      logoUrl: item.url,
+                      type: "image",
+                      display: "logo"
+                    });
+                    setMsg(`Applied ${item.displayName}`);
+                    setTimeout(() => setMsg(""), 2000);
+                  }}
+                  className="flex items-center gap-3 p-2 bg-white border border-slate-100/60 rounded-xl hover:border-blue-300 hover:bg-blue-50/20 hover:shadow-md active:scale-[0.98] transition-all text-left group"
+                >
+                  <div className="w-12 h-12 rounded-lg border border-slate-50 bg-slate-50 p-2 flex items-center justify-center overflow-hidden shrink-0 group-hover:bg-white group-hover:border-blue-100 transition-colors">
+                    <img 
+                      src={item.url} 
+                      alt={item.displayName} 
+                      className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-500" 
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-[10px] font-bold text-slate-700 truncate uppercase tracking-tight">
+                        {item.displayName}
+                      </p>
+                      {searchQuery && (
+                        <span className="text-[7px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-400 font-bold uppercase tracking-tighter shrink-0">
+                          {item.category}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[8px] text-slate-400 uppercase tracking-widest mt-0.5 group-hover:text-blue-400 transition-colors">
+                      Standard Overlay
+                    </p>
+                  </div>
+                  <ChevronRight className="w-3.5 h-3.5 text-slate-200 group-hover:text-blue-500 group-hover:translate-x-0.5 transition-all" />
+                </button>
+              ))}
+              {BRANDING_LIBRARY.filter(item => {
+                  const matchesSearch = item.displayName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                                      item.category.toLowerCase().includes(searchQuery.toLowerCase());
+                  if (searchQuery) return matchesSearch;
+                  return item.category === selectedCategory;
+                }).length === 0 && (
+                <div className="text-center py-12 flex flex-col items-center justify-center opacity-40">
+                  <Search className="w-8 h-8 mb-3 text-slate-300" />
+                  <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">No logos found</p>
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4 pt-4 border-t border-slate-100 animate-in slide-in-from-bottom-2 duration-300">
+            <div className="flex items-center justify-between">
+               <h4 className="text-[11px] font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                 <Globe className="w-3.5 h-3.5" /> Community Presets
+               </h4>
+               <button onClick={handlePublish} disabled={isPublishing} className="text-[9px] font-bold uppercase tracking-widest text-blue-500 hover:text-blue-700">
+                 {isPublishing ? "..." : "Publish Mine"}
+               </button>
+            </div>
+            <div className="grid grid-cols-1 gap-3">
+              {presets.length === 0 && (
+                <p className="text-[10px] text-slate-400 italic py-4">No community presets yet.</p>
+              )}
+              {presets.map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => { 
+                    setName(p.name); 
+                    setLogoUrl(p.logoUrl ?? ""); 
+                    setDisplay(p.display ?? "both"); 
+                    setPosition(p.position ?? "top-right");
+                    setType(p.type ?? "pill");
+                    setSize(p.size ?? "medium");
+                    setSizePercentage(p.sizePercentage ?? 100);
+                    setPadding(p.padding ?? 24);
+                  }}
+                  className="flex items-center gap-3 p-3 bg-white border border-slate-100 rounded-xl hover:border-blue-200 hover:bg-blue-50/30 transition-all text-left group"
+                >
+                  <div className="w-10 h-10 rounded-lg border border-slate-100 bg-white p-1 shrink-0 flex items-center justify-center overflow-hidden">
+                    {p.logoUrl ? <img src={p.logoUrl} alt={p.name} className="max-h-full max-w-full object-contain" /> : <Box className="w-5 h-5 text-slate-200" />}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-bold text-slate-900 truncate group-hover:text-blue-600 transition-colors uppercase tracking-tight">{p.name}</p>
+                    <p className="text-[9px] text-slate-400 uppercase tracking-wider mt-0.5">{p.display ?? "both"}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </aside>
   );

@@ -77,6 +77,7 @@ export const PRICING_TABLE = [
   { provider: "OpenAI",    model: "gpt-4o",             inputPer1M: 2.50,  outputPer1M: 10.00, adesso: false },
   { provider: "Anthropic", model: "claude-sonnet-4-6",  inputPer1M: 3.00,  outputPer1M: 15.00, adesso: false },
   { provider: "Gemini",    model: "gemini-2.0-flash",   inputPer1M: 0.15,  outputPer1M: 3.50,  adesso: false },
+  { provider: "Adesso",    model: "Various (Azure EU)",  inputPer1M: null,  outputPer1M: null,  adesso: true  },
 ] as const;
 
 // Typical full deck estimate: ~8 000 input + ~6 000 output tokens

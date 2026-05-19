@@ -122,6 +122,20 @@ useEffect(() => {
     • anime.timeline({ defaults }) — sequential timeline; .add(params, offset) where offset can be '-=Nms'
     • targets accepts a CSS selector string, a DOM element, or a NodeList
     • anime.setDashoffset is a function value — pass it directly, no call needed
+EXTERNAL GRAPHICS & ICONS (CRITICAL):
+Do NOT attempt to write complex SVG paths (like cars, people, or globes) from scratch. You will hallucinate and fail. Use these two libraries instead:
+
+1. UI Icons & Simple Vector Shapes (Material Symbols):
+   Available globally. Use for generic icons (e.g., car, rocket, analytics, warning).
+   Syntax: <span className="material-symbols-rounded" style={{ fontSize: '120px', color: 'var(--sl-accent)' }}>directions_car</span>
+   Common names: directions_car, lightbulb, rocket_launch, bar_chart, monitoring, public, group.
+
+2. Brand Logos & Emojis (Iconify API):
+   Use for specific brand logos or multi-colored icons (e.g., React logo, Twitter, colored emojis).
+   Syntax: <img src="https://api.iconify.design/[set]/[icon].svg" className="w-32 h-32" alt="icon" />
+   Example Logos: logos:react, logos:javascript, logos:aws
+   Example Emojis: twemoji:oncoming-automobile, twemoji:rocket
+
 27. In-slide tabs for multi-faceted content (tab clicks do NOT navigate slides):
 \`\`\`jsx
 function TabSlide({ tabs, content }) {
@@ -238,8 +252,10 @@ export default function Presentation() {
       {/* SLIDE 2 — STAT-SPOTLIGHT archetype */}
       {current === 2 && (
         <div key={current} className='h-screen w-screen flex flex-col items-center justify-center px-20 py-16'>
-          <p className='sl-anim text-sm uppercase tracking-widest mb-12' style={{ color: 'var(--sl-accent)' }}>Key metrics</p>
-          <div className='flex gap-24 items-end'>
+          <p className='sl-anim text-sm uppercase tracking-widest mb-8' style={{ color: 'var(--sl-accent)' }}>Key metrics</p>
+          {/* Material Symbols icon — use instead of broken hand-drawn SVGs */}
+          <span className='sl-anim material-symbols-rounded sl-delay-1' style={{ fontSize: '96px', color: 'var(--sl-accent)', opacity: 0.85 }}>monitoring</span>
+          <div className='flex gap-24 items-end mt-8'>
             <div className='sl-anim text-center'>
               <p className='text-9xl font-black leading-none' style={{ color: 'var(--sl-accent)' }}>4.2M</p>
               <p className='mt-4 text-xl' style={{ color: 'var(--sl-sub)' }}>Active users</p>

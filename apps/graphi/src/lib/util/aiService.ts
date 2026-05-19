@@ -11,11 +11,13 @@ interface ChatMessage {
 }
 
 interface AIServiceConfig {
-  provider: 'gemini' | 'openai' | 'anthropic' | 'groq';
+  provider: 'gemini' | 'openai' | 'anthropic' | 'adesso';
   model?: string;
   keys: Record<string, string>;
   apiKey?: string; // Legacy field for migration
 }
+
+const ADESSO_BASE_URL = 'https://adesso-ai-hub.3asabc.de/v1';
 
 const SYSTEM_PROMPT = `
 ${MERMAID_EXPERT_CONTEXT}
@@ -59,12 +61,6 @@ function getConfig(): AIServiceConfig | null {
   if (!stored) return null;
   try {
     const config = JSON.parse(stored) as AIServiceConfig;
-
-    // Migration: If provider is adesso, fallback to gemini
-    if ((config.provider as string) === 'adesso') {
-      config.provider = 'gemini';
-      saveConfig(config);
-    }
 
     // Migration: If keys doesn't exist but apiKey does, migrate it
     if (!config.keys) {
@@ -115,6 +111,8 @@ async function generateDiagram(
     return callGroq(providerKey, contextMessage, history, config.model);
   } else if (config.provider === 'anthropic') {
     return callAnthropic(providerKey, contextMessage, history, config.model);
+  } else if (config.provider === 'adesso') {
+    return callAdesso(providerKey, contextMessage, history, config.model);
   } else {
     return callOpenAI(providerKey, contextMessage, history, config.model);
   }
@@ -327,6 +325,54 @@ async function callAnthropic(
   return data?.content?.[0]?.text || '';
 }
 
+async function callAdesso(
+  apiKey: string,
+  message: string,
+  history: ChatMessage[],
+  model?: string
+): Promise<string> {
+  const modelName = model || 'gpt-4.1';
+  const url = `${ADESSO_BASE_URL}/chat/completions`;
+
+  const messages: { role: 'system' | 'user' | 'assistant'; content: string }[] = [
+    { role: 'system', content: SYSTEM_PROMPT }
+  ];
+
+  for (const msg of history.slice(-6)) {
+    messages.push({
+      content: msg.content,
+      role: msg.role
+    });
+  }
+
+  messages.push({ content: message, role: 'user' });
+
+  const response = await fetch(url, {
+    body: JSON.stringify({
+      max_tokens: 4096,
+      messages,
+      model: modelName,
+      temperature: 0.3
+    }),
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json'
+    },
+    method: 'POST'
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(
+      `Adesso AI Hub error: ${response.status} - ${(errorData as { error?: { message?: string } })?.error?.message || response.statusText}`
+    );
+  }
+
+  const data = (await response.json()) as {
+    choices?: { message?: { content?: string } }[];
+  };
+  return data?.choices?.[0]?.message?.content || '';
+}
 
 export { clearConfig, generateDiagram, getConfig, saveConfig };
 export type { AIServiceConfig, ChatMessage };
