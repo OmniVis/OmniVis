@@ -122,13 +122,18 @@ useEffect(() => {
     • anime.timeline({ defaults }) — sequential timeline; .add(params, offset) where offset can be '-=Nms'
     • targets accepts a CSS selector string, a DOM element, or a NodeList
     • anime.setDashoffset is a function value — pass it directly, no call needed
-EXTERNAL GRAPHICS & ICONS (CRITICAL):
-Do NOT attempt to write complex SVG paths (like cars, people, or globes) from scratch. You will hallucinate and fail. Use these two libraries instead.
+EXTERNAL GRAPHICS & ICONS (CRITICAL — NO EXCEPTIONS):
+ABSOLUTE RULE: Never write <path>, <polygon>, <polyline>, or <g> elements to draw any real-world object — no cars, silhouettes, people, animals, buildings, logos, or any recognisable shape. This includes "simple" or "geometric" approximations. You will produce garbage. Use the libraries below instead.
+SVG is ONLY allowed for abstract data charts (bars, lines, arcs with numeric data). Everything else uses the icon libraries.
 
 DECISION RULE — choose by topic:
 • Generic UI concept (chart, idea, settings, warning, user) → use Material Symbols (option 1)
 • Specific / themed subject (racing car, food, animal, sport, flag, face) → use Iconify twemoji (option 2)
 When in doubt, always prefer twemoji — its names map directly to emoji and are always correct.
+
+EXAMPLE — F1 presentation:
+  ✗ WRONG: <svg viewBox="0 0 100 50"><path d="M15 28 Q18 20 ..." /></svg>
+  ✓ CORRECT: <img src="https://api.iconify.design/twemoji/racing-car.svg" className="w-48 h-48" alt="F1 car" />
 
 1. Material Symbols (generic UI icons — available globally as a font):
    Syntax: <span className="material-symbols-rounded" style={{ fontSize: '120px', color: 'var(--sl-accent)' }}>ICON_NAME</span>
