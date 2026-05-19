@@ -25,7 +25,7 @@ def main() -> None:
     except ImportError:
         print(
             "markitdown is not installed. "
-            "Run: pip install markitdown",
+            "Run: pip install \"markitdown[all]\"",
             file=sys.stderr,
         )
         sys.exit(2)

@@ -19,7 +19,7 @@ ENV PORT=3000
 # Install Python 3 + pip for the MarkItDown file-conversion bridge
 RUN apt-get update && \
     apt-get install -y --no-install-recommends python3 python3-pip && \
-    pip3 install --no-cache-dir markitdown --break-system-packages && \
+    pip3 install --no-cache-dir "markitdown[all]" --break-system-packages && \
     rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /app/public ./public

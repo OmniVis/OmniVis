@@ -65,7 +65,7 @@ export async function POST(request: Request) {
         {
           error:
             "Python 3 is not available on this server. " +
-            "Install Python 3 and run: pip install markitdown",
+            "Install Python 3 and run: pip install \"markitdown[all]\"",
         },
         { status: 503 },
       );
@@ -114,7 +114,7 @@ export async function POST(request: Request) {
           {
             error:
               "markitdown is not installed on this server. " +
-              "Run: pip install markitdown",
+              "Run: pip install \"markitdown[all]\"",
           },
           { status: 503 },
         );

@@ -41,7 +41,13 @@ export function AttachButton({ disabled }: { disabled?: boolean }) {
           body: form,
         });
 
-        const data = await res.json();
+        const text = await res.text();
+        let data: any;
+        try {
+          data = JSON.parse(text);
+        } catch {
+          data = { error: res.status === 413 ? "File is too large." : `Server error ${res.status}: ${res.statusText}` };
+        }
 
         if (!res.ok || data.error) {
           alert(`Could not convert "${file.name}":\n${data.error ?? "Unknown error"}`);
@@ -143,7 +149,13 @@ export function FileDropZone({ children, disabled }: { children: React.ReactNode
       form.append("file", file);
       const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
       const res = await fetch(`${basePath}/api/convert`, { method: "POST", body: form });
-      const data = await res.json();
+      const text = await res.text();
+      let data: any;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = { error: res.status === 413 ? "File is too large." : `Server error ${res.status}: ${res.statusText}` };
+      }
       if (!res.ok || data.error) {
         alert(`Could not convert "${file.name}":\n${data.error ?? "Unknown error"}`);
         return;
