@@ -28,54 +28,21 @@ describe("buildPrompt", () => {
 });
 
 describe("BASE_PROMPT quality rules", () => {
-  it("includes explicit completion contract for minimum slide count", () => {
-    expect(BASE_PROMPT).toContain("COMPLETION CONTRACT");
-    expect(BASE_PROMPT).toContain("const totalSlides");
+  it("includes JSON schema requirement", () => {
+    expect(BASE_PROMPT).toContain("Output ONLY valid JSON");
+    expect(BASE_PROMPT).toContain("JSON");
   });
 
-  it("requires minimum 8 slides", () => {
-    expect(BASE_PROMPT).toContain("MINIMUM of 8 slides");
+  it("requires minimum 14 slides", () => {
+    expect(BASE_PROMPT).toContain("14");
   });
 
-  it("references sl-slide-up animation class", () => {
-    expect(BASE_PROMPT).toContain("sl-slide-up");
+  it("forbids emoji usage", () => {
+    expect(BASE_PROMPT).toContain("Never use emoji");
   });
 
-  it("references sl-delay stagger helpers", () => {
-    expect(BASE_PROMPT).toContain("sl-delay-1");
-  });
-
-  it("references Anime.js global for complex animations", () => {
-    expect(BASE_PROMPT).toContain("anime");
-  });
-
-  it("includes Anime.js animated counter example (replaces requestAnimationFrame)", () => {
-    expect(BASE_PROMPT).toContain("sl-counter");
-  });
-
-  it("includes SVG bar chart pattern with sl-bar-grow", () => {
-    expect(BASE_PROMPT).toContain("sl-bar-grow");
-  });
-
-  it("includes tab/toggle interactive pattern", () => {
-    expect(BASE_PROMPT).toContain("TabSlide");
-  });
-
-  it("forbids hardcoded colour classes on all elements", () => {
-    expect(BASE_PROMPT).toContain("NEVER use hardcoded Tailwind colour classes");
-  });
-
-  it("recommends bg-sl-bg and text-sl-text utility classes", () => {
-    expect(BASE_PROMPT).toContain("bg-sl-bg");
-    expect(BASE_PROMPT).toContain("text-sl-text");
-  });
-
-  it("example component uses key={current} to re-trigger animations", () => {
-    expect(BASE_PROMPT).toContain("key={current}");
-  });
-
-  it("example component uses sl-scale-in on slide container", () => {
-    expect(BASE_PROMPT).toContain("sl-scale-in");
+  it("requires content limits", () => {
+    expect(BASE_PROMPT).toContain("MAX");
   });
 });
 
@@ -291,5 +258,58 @@ describe("buildAttachedFilesBlock", () => {
   it("trims whitespace from markdown content", () => {
     const result = buildAttachedFilesBlock([{ name: "notes.txt", markdown: "   hello world   ", size: 20 }]);
     expect(result).toContain("hello world");
+  });
+});
+
+describe("BASE_PROMPT visuals rule", () => {
+  it("instructs LLM to use visualType instead of SVG", () => {
+    expect(BASE_PROMPT).toContain("visualType");
+    expect(BASE_PROMPT).toContain("visualPrompt");
+  });
+});
+
+describe("BASE_PROMPT no-emoji rule", () => {
+  it("includes emoji prohibition", () => {
+    expect(BASE_PROMPT).toContain("EMOJI");
+  });
+
+  it("forbids emoji characters", () => {
+    expect(BASE_PROMPT).toContain("Never use emoji");
+  });
+});
+
+describe("BASE_PROMPT content-density rules", () => {
+  it("mandates one idea per slide", () => {
+    expect(BASE_PROMPT).toContain("One idea");
+  });
+
+  it("includes word count limit for body text", () => {
+    expect(BASE_PROMPT).toContain("35 words");
+  });
+
+  it("defines archetype content budgets", () => {
+    expect(BASE_PROMPT).toContain("CONTENT BUDGET");
+  });
+
+  it("includes visual hierarchy principle", () => {
+    expect(BASE_PROMPT).toContain("One idea");
+  });
+
+  it("documents content split guidance", () => {
+    expect(BASE_PROMPT).toContain("Split");
+  });
+
+  it("includes closing slide guidance", () => {
+    expect(BASE_PROMPT).toContain("CLOSING");
+  });
+});
+
+describe("BASE_PROMPT background decoration rule", () => {
+  it("documents background fill types", () => {
+    expect(BASE_PROMPT).toContain("diagonal-gradient");
+  });
+
+  it("documents animation types", () => {
+    expect(BASE_PROMPT).toContain("spring-stagger");
   });
 });

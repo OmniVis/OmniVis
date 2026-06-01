@@ -29,12 +29,19 @@ export function isFreeAdessoModel(modelId: string): boolean {
 }
 
 function extractCode(raw: string): string {
+  const jsonFenced = raw.match(/```(?:json)?\n([\s\S]*?)```/);
+  if (jsonFenced) return jsonFenced[1].trim();
   const fenced = raw.match(/```(?:jsx|tsx|js|ts|javascript)?\n([\s\S]*?)```/);
   if (fenced) return fenced[1].trim();
   return raw.trim();
 }
 
 function detectSlideCount(code: string): number | null {
+  try {
+    const data = JSON.parse(code);
+    if (data && Array.isArray(data.slides)) return data.slides.length;
+  } catch {}
+
   const totalSlidesMatch = code.match(/const\s+totalSlides\s*=\s*(\d+)/);
   if (totalSlidesMatch) return parseInt(totalSlidesMatch[1], 10);
 
@@ -48,6 +55,21 @@ function assertLikelyCompletePresentation(code: string, minSlides = 6): string {
   const trimmed = code.trim();
   if (!trimmed) {
     throw new Error("Model returned empty code.");
+  }
+
+  try {
+    const data = JSON.parse(trimmed);
+    if (!data.slides || !Array.isArray(data.slides)) {
+      throw new Error("Model output is incomplete: missing slides array.");
+    }
+    if (data.slides.length < minSlides) {
+      throw new Error(`Model output incomplete: expected at least ${minSlides} slides, got ${data.slides.length}.`);
+    }
+    return trimmed;
+  } catch (e) {
+    if (e instanceof SyntaxError && trimmed.startsWith("{")) {
+       throw new Error("Model output appears truncated (invalid JSON). Please retry.");
+    }
   }
 
   // Catch common truncation patterns from model output limits.
@@ -83,7 +105,7 @@ function parseExpectedSlideCount(messages: ChatMessage[]): number {
   const last = [...messages].reverse().find(m => m.role === "user")?.content ?? "";
   const match = last.match(/\b(\d+)[- ]?slides?\b/i)
              ?? last.match(/\b(\d+)[- ]?slide\b/i);
-  const n = match ? parseInt(match[1], 10) : 8;
+  const n = match ? parseInt(match[1], 10) : 14;
   return Math.max(4, Math.min(n, 30));
 }
 
@@ -487,6 +509,77 @@ async function callAdesso(
   return extractCode(data.choices[0].message.content);
 }
 
+async function callAdessoStream(
+  messages: ChatMessage[],
+  apiKey: string,
+  systemPrompt: string,
+  model: string,
+  onChunk: (partial: string) => void
+): Promise<string> {
+  const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+  const body = {
+    model,
+    messages: [
+      { role: "system", content: systemPrompt },
+      ...messages.map((m) => ({
+        role: m.role === "user" ? "user" : "assistant",
+        content: m.content,
+      })),
+    ],
+    max_tokens: isFreeAdessoModel(model) ? 8192 : 16384,
+    temperature: 0.7,
+    stream: true,
+  };
+
+  const res = await fetch(`${BASE}/api/adesso`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({})) as { error?: { message?: string } };
+    throw new Error(err?.error?.message ?? `adesso AI Hub error ${res.status}`);
+  }
+
+  if (!res.body) throw new Error("adesso streaming response has no body.");
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let accumulated = "";
+  let remainder = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    const text = remainder + decoder.decode(value, { stream: true });
+    const lines = text.split("\n");
+    remainder = lines.pop() ?? "";
+    for (const line of lines) {
+      if (!line.startsWith("data: ")) continue;
+      const data = line.slice(6).trim();
+      if (data === "[DONE]") continue;
+      try {
+        const parsed = JSON.parse(data) as {
+          choices: Array<{ delta: { content?: string } }>;
+        };
+        const chunk = parsed.choices[0]?.delta?.content;
+        if (chunk) {
+          accumulated += chunk;
+          onChunk(accumulated);
+        }
+      } catch {
+        // skip malformed SSE lines
+      }
+    }
+  }
+
+  return extractCode(accumulated);
+}
+
 function assertNeverProvider(provider: never): never {
   throw new Error(`Unknown provider: ${provider}`);
 }
@@ -512,7 +605,9 @@ async function callProvider(
     case "gemini":
       return callGemini(messages, apiKey, systemPrompt, operationType);
     case "adesso":
-      return callAdesso(messages, apiKey, systemPrompt, adessoModel);
+      return onChunk
+        ? callAdessoStream(messages, apiKey, systemPrompt, adessoModel, onChunk)
+        : callAdesso(messages, apiKey, systemPrompt, adessoModel);
     default:
       return assertNeverProvider(provider);
   }
@@ -559,7 +654,10 @@ export async function generateSlideEdit(
     // Basic sanity check: response should look like a slide block
     if (!trimmed.startsWith("{current ===")) return null;
 
-    return trimmed;
+    // Strip any content after the first slide block — AI sometimes appends
+    // empty blocks for subsequent slides which corrupt the splice result.
+    const nextBlockIdx = trimmed.indexOf("{current ===", 1);
+    return nextBlockIdx !== -1 ? trimmed.slice(0, nextBlockIdx).trimEnd() : trimmed;
   } catch {
     return null;
   }
@@ -645,6 +743,40 @@ export async function generatePlanModeResponse(
   return callProvider(provider, messages, apiKey, systemPrompt, adessoModel, undefined, "plan-outline");
 }
 
+/**
+ * Generates a deterministic entropy hint for layout variety.
+ * Same topic → same variety sequence; different topics → different sequences.
+ */
+function buildEntropyHint(topic: string, slideCount: number): string {
+  const archetypes = [
+    'HERO-FULL-BLEED', 'TWO-COLUMN', 'STAT-SPOTLIGHT', 'CHART-WITH-ANNOTATION',
+    'TIMELINE-HORIZONTAL', 'QUOTE-WITH-ACCENT', 'MAGAZINE-WRAP', 'MOSAIC-GRID',
+    'DIAGONAL-SPLIT', 'IMMERSIVE-HERO',
+  ];
+  const fills = ['svg-grid', 'large-circle', 'diagonal-gradient', 'full-bleed-gradient', 'diagonal-gradient'];
+  const anims = ['spring-stagger', 'timeline-sequence', 'counter', 'stroke-draw', 'fade-cascade'];
+
+  // Simple hash from topic string
+  const hash = topic.split('').reduce((a, c, i) => a + c.charCodeAt(0) * (i + 1), 0);
+
+  // Deterministic shuffle of archetypes so no two adjacent slides share the same one
+  const shuffled = [...archetypes].sort((a, b) => {
+    const ai = archetypes.indexOf(a);
+    const bi = archetypes.indexOf(b);
+    return ((hash * (ai + 3)) % archetypes.length) - ((hash * (bi + 3)) % archetypes.length);
+  });
+
+  const assignments = Array.from({ length: slideCount }, (_, i) => ({
+    slide: i + 1,
+    archetype: shuffled[i % shuffled.length],
+    fill: fills[(hash + i * 3) % fills.length],
+    anim: anims[(hash + i * 7) % anims.length],
+  }));
+
+  return `\n\nVARIETY PLAN (follow this — different archetype on every consecutive slide):\n` +
+    assignments.map(s => `Slide ${s.slide}: ${s.archetype} | fill:${s.fill} | anim:${s.anim}`).join('\n');
+}
+
 export async function generatePresentation(
   messages: ChatMessage[],
   apiKey: string,
@@ -657,6 +789,9 @@ export async function generatePresentation(
     cachedPlan?: string | null;
     userContext?: UserContext | null;
     presentationMode?: "corporate" | "private";
+    activePersona?: string | null;
+    designBrief?: string | null;
+    premiumPresentationMode?: boolean;
   },
   onChunk?: (partial: string) => void
 ): Promise<GenerationResult> {
@@ -667,26 +802,34 @@ export async function generatePresentation(
   const expectedCount = isFreeModel ? 5 : parseExpectedSlideCount(messages);
   const userCtx = options?.userContext;
   const presMode = options?.presentationMode;
+  const personaId = options?.activePersona ?? null;
+  const designBrief = options?.designBrief ?? null;
+  const premiumMode = options?.premiumPresentationMode ?? false;
   let planText = options?.cachedPlan ?? null;
+
+  // Extract topic from last user message for entropy hint
+  const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')?.content ?? '';
+  const topicForEntropy = lastUserMsg.slice(0, 200);
 
   // Pass 1: planning — skipped for follow-up edits or when a cached plan is provided
   if (!options?.skipPlanning) {
     onStageChange?.("planning");
-    const planningPrompt = buildPlanningPrompt(themeBlock, maxSlides, userCtx, presMode);
+    const planningPrompt = buildPlanningPrompt(themeBlock, maxSlides, userCtx, presMode, personaId, designBrief, premiumMode);
     planText = await callProvider(provider, messages, apiKey, planningPrompt, adessoModel, undefined, "generate");
   }
 
   // Pass 2: generate full component
   onStageChange?.("generating");
-  const generationPrompt = buildPrompt(themeBlock, maxSlides, userCtx, presMode);
+  const generationPrompt = buildPrompt(themeBlock, maxSlides, userCtx, presMode, personaId, designBrief, premiumMode);
+  const entropyHint = buildEntropyHint(topicForEntropy, maxSlides ?? expectedCount);
   const generationMessages: ChatMessage[] = [
     ...messages,
     ...(planText
       ? [{
           role: "user" as const,
-          content: `Use this slide plan while generating the full component:\n\n${planText}\n\nReturn complete code only.`,
+          content: `Use this slide plan while generating the full component:\n\n${planText}\n\nReturn complete code only.${entropyHint}`,
         }]
-      : []),
+      : [{ role: "user" as const, content: entropyHint }]),
   ];
   const firstAttemptCode = await callProvider(provider, generationMessages, apiKey, generationPrompt, adessoModel, onChunk, "generate");
 
@@ -702,7 +845,7 @@ export async function generatePresentation(
   } catch (initialError) {
     // Pass 3: repair — only if pass 2 failed validation
     onStageChange?.("finalizing");
-    const repairPrompt = buildRepairPrompt(themeBlock, maxSlides, userCtx, presMode);
+    const repairPrompt = buildRepairPrompt(themeBlock, maxSlides, userCtx, presMode, personaId, designBrief, premiumMode);
     const repairMessages: ChatMessage[] = [
       {
         role: "user",

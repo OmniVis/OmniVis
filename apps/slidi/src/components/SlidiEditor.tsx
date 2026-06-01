@@ -12,7 +12,6 @@ import { Check, X, Layers, TerminalSquare, Palette, LayoutGrid } from "lucide-re
 import { applyCustomTheme, loadCustomPalette } from "@/lib/themes";
 import { extractSessionName } from "@/lib/sessions";
 import { useBroadcastChannel } from "@/hooks/useBroadcastChannel";
-import { useCollabSession } from "@/hooks/useCollabSession";
 import { useOfflineQueue } from "@/hooks/useOfflineQueue";
 import { migrateSessionsToIdb } from "@/lib/migrations";
 import { getUserId } from "@/lib/userId";
@@ -94,8 +93,6 @@ function SlidiEditorInner() {
   const [forkBanner, setForkBanner] = useState<"success" | "error" | null>(null);
   const [shareToast, setShareToast] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  // Collab invite URL — persisted until collab is turned off (Fix D)
-  const [inviteUrl, setInviteUrl] = useState<string | undefined>(undefined);
 
   // Show API key modal on first visit (client-only)
   useEffect(() => {
@@ -264,28 +261,6 @@ function SlidiEditorInner() {
     URL.revokeObjectURL(url);
   };
 
-  // Collab state
-  const [isCollabEnabled, setIsCollabEnabled] = useState(false);
-
-  // Start collab automatically when a collabSessionId is set (e.g. via invite link)
-  const collabSessionId = useSlidiStore((s) => s.collabSessionId);
-  useEffect(() => {
-    if (collabSessionId) setIsCollabEnabled(true);
-  }, [collabSessionId]);
-
-  // Reset collab when switching sessions so the new session starts clean.
-  // Without this, isCollabEnabled stays true and the hook reconnects with the
-  // new presentationId — triggering another empty-room SYNC on the new session.
-  useEffect(() => {
-    setIsCollabEnabled(false);
-  }, [currentSessionId]);
-
-  const collabPresentationId = collabSessionId || currentVersionId;
-  useCollabSession({
-    presentationId: collabPresentationId,
-    enabled: isCollabEnabled && !!collabPresentationId,
-  });
-
   const { conflict, queueVersion, replayQueue } = useOfflineQueue();
 
   // When offline: queue version pushes instead of letting them be lost
@@ -411,55 +386,6 @@ function SlidiEditorInner() {
         presentationName={presentationName}
         onRenamePresentation={setPresentationName}
         onSave={handleSave}
-        inviteUrl={inviteUrl}
-        onCollab={async () => {
-          if (!currentVersionId) return;
-          
-          // Toggle collaboration state
-          const turningOn = !isCollabEnabled;
-          setIsCollabEnabled(turningOn);
-
-          if (!turningOn) {
-            // Turning off — clear the stored invite URL
-            setInviteUrl(undefined);
-          } else {
-            // Turning on — generate an invite link and store it persistently
-            try {
-              const res = await fetch(`${BASE}/api/collab/invite/${currentVersionId}`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ userId: getUserId() }),
-              });
-
-              if (res.ok) {
-                const data = await res.json() as { inviteUrl: string };
-                // inviteUrl already contains the basePath (e.g. /slidi/collab/TOKEN)
-                const fullUrl = `${window.location.origin}${data.inviteUrl}`;
-
-                // Store persistently in state (visible in Header as long as collab is on)
-                setInviteUrl(fullUrl);
-
-                // Also copy to clipboard on first activation for convenience
-                if (navigator.clipboard) {
-                  await navigator.clipboard.writeText(fullUrl).catch(() => {});
-                } else {
-                  const el = document.createElement("textarea");
-                  el.value = fullUrl;
-                  el.style.cssText = "position:fixed;opacity:0;pointer-events:none";
-                  document.body.appendChild(el);
-                  el.select();
-                  document.execCommand("copy");
-                  document.body.removeChild(el);
-                }
-
-                setShareToast(fullUrl);
-                setTimeout(() => setShareToast(null), 5000);
-              }
-            } catch (err) {
-              console.error("Failed to generate collab invite:", err);
-            }
-          }
-        }}
       />
 
       {/* Fork banner */}

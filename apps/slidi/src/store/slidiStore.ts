@@ -31,15 +31,6 @@ export interface UserContext {
   customInstructions: string;
 }
 
-export interface CollaboratorInfo {
-  /** HMAC-hashed userId — never the raw UUID */
-  sub: string;
-  /** Chosen display name, or null if the user has none */
-  username: string | null;
-  color: string;
-  cursorSlide: number;
-}
-
 export interface ChatMessage {
   role: "user" | "system";
   content: string;
@@ -63,6 +54,18 @@ export interface AttachedFile {
   size: number;
 }
 
+export type ElementType = "icon" | "image" | "link" | "text" | "generic";
+
+export interface SelectedElement {
+  elementType: ElementType;
+  /** Icon name, image src URL, link href, or text content */
+  currentValue: string;
+  /** Element bounding rect relative to the iframe viewport */
+  rect: { top: number; left: number; width: number; height: number };
+  tagName: string;
+  xpath: string;
+}
+
 const HISTORY_CAP = 20;
 const KEY_PREFIX = "slidi_api_key_";
 const PROVIDER_KEY = "slidi_provider";
@@ -82,6 +85,10 @@ const CHAT_MESSAGES_KEY = "slidi_chat_messages";
 const CURRENT_SESSION_KEY = "slidi_current_session_id";
 const USER_CONTEXT_KEY = "slidi_user_context";
 const PRESENTATION_MODE_KEY = "slidi_presentation_mode";
+const PREMIUM_MODE_KEY = "slidi_premium_mode";
+const ACTIVE_PERSONA_KEY = "slidi_active_persona";
+const DESIGN_BRIEF_KEY = "slidi_design_brief";
+const ENGINE_VERSION_KEY = "slidi_engine_version";
 const DEFAULT_ADESSO_MODEL = "gpt-4.1";
 
 interface SlidiState {
@@ -127,6 +134,10 @@ interface SlidiState {
   pendingEditContext: string | null;
   setPendingEditContext: (ctx: string | null) => void;
 
+  // Visual editor — currently selected element (set by SandpackCanvas on sl-element-select)
+  selectedElement: SelectedElement | null;
+  setSelectedElement: (el: SelectedElement | null) => void;
+
   // Branding
   branding: Branding | null;
   setBranding: (branding: Branding | null) => void;
@@ -169,6 +180,22 @@ interface SlidiState {
   presentationMode: "corporate" | "private";
   setPresentationMode: (mode: "corporate" | "private") => void;
 
+  // Premium Presentation Mode (higher quality, longer gen time)
+  premiumPresentationMode: boolean;
+  setPremiumPresentationMode: (mode: boolean) => void;
+
+  // Design Persona — persisted
+  activePersona: string | null;
+  setActivePersona: (id: string | null) => void;
+
+  // Generation Engine Version — persisted
+  engineVersion: "v0" | "v1" | "v2" | "v3" | "v4";
+  setEngineVersion: (v: "v0" | "v1" | "v2" | "v3" | "v4") => void;
+
+  // Design Brief — persisted
+  designBrief: string | null;
+  setDesignBrief: (brief: string | null) => void;
+
   // Auth
   authMode: AuthMode;
   userProfile: UserProfile | null;
@@ -176,14 +203,6 @@ interface SlidiState {
   setUserProfile: (profile: UserProfile | null) => void;
   /** Clear key + profile, reset to pending so AuthModal shows again. */
   logout: () => void;
-
-  // Collaboration
-  collaborators: CollaboratorInfo[];
-  isCollabActive: boolean;
-  collabSessionId: string | null;
-  setCollabActive: (v: boolean) => void;
-  setCollabSessionId: (id: string | null) => void;
-  setCollaborators: (collaborators: CollaboratorInfo[]) => void;
 
   // Attached files — ephemeral, cleared after generation; never persisted
   attachedFiles: AttachedFile[];
@@ -224,8 +243,12 @@ function loadFromStorage(): {
   planMode: boolean;
   userContext: UserContext | null;
   presentationMode: "corporate" | "private";
+  premiumPresentationMode: boolean;
   messages: ChatMessage[];
   currentSessionId: string | null;
+  activePersona: string | null;
+  designBrief: string | null;
+  engineVersion: "v0" | "v1" | "v2" | "v3" | "v4";
 } {
   if (typeof window === "undefined") {
     return {
@@ -247,8 +270,12 @@ function loadFromStorage(): {
       planMode: false,
       userContext: null,
       presentationMode: "corporate",
+      premiumPresentationMode: false,
       messages: [],
       currentSessionId: null,
+      activePersona: null,
+      designBrief: null,
+      engineVersion: "v4",
     };
   }
 
@@ -322,6 +349,14 @@ function loadFromStorage(): {
     const presentationMode: "corporate" | "private" =
       rawPresentationMode === "private" ? "private" : "corporate";
 
+    const premiumPresentationMode = localStorage.getItem(PREMIUM_MODE_KEY) === "true";
+
+    const activePersona: string | null = localStorage.getItem(ACTIVE_PERSONA_KEY) ?? null;
+    const designBrief: string | null = localStorage.getItem(DESIGN_BRIEF_KEY) ?? null;
+
+    const rawEngineVersion = localStorage.getItem(ENGINE_VERSION_KEY);
+    const engineVersion: "v0" | "v1" | "v2" | "v3" | "v4" = (rawEngineVersion === "v0" || rawEngineVersion === "v1" || rawEngineVersion === "v2" || rawEngineVersion === "v3" || rawEngineVersion === "v4") ? rawEngineVersion : "v4";
+
     // Restore active session ID — validate against the current sessions list so
     // stale IDs (e.g. after a session was deleted) don't leave things in a broken state.
     const sessions = loadSessions();
@@ -330,7 +365,7 @@ function loadFromStorage(): {
       ? storedSessionId
       : null;
 
-    return { keys, apiKey: keys[provider], provider, theme, history, historyTimestamps, historyIndex, generatedCode, currentVersionId, adessoModel, branding, notes, presentationName, authMode, userProfile, planMode, userContext, presentationMode, messages, currentSessionId };
+    return { keys, apiKey: keys[provider], provider, theme, history, historyTimestamps, historyIndex, generatedCode, currentVersionId, adessoModel, branding, notes, presentationName, authMode, userProfile, planMode, userContext, presentationMode, premiumPresentationMode, messages, currentSessionId, activePersona, designBrief, engineVersion };
   } catch (err) {
     console.error("Failed to load from storage (blocked?):", err);
     return {
@@ -352,8 +387,12 @@ function loadFromStorage(): {
       planMode: false,
       userContext: null,
       presentationMode: "corporate",
+      premiumPresentationMode: false,
       messages: [],
       currentSessionId: null,
+      activePersona: null,
+      designBrief: null,
+      engineVersion: "v4",
     };
   }
 }
@@ -415,6 +454,11 @@ export const useSlidiStore = create<SlidiState>()((set, get) => ({
   clearMessages: () => {
     try { localStorage.removeItem(CHAT_MESSAGES_KEY); } catch { /* ignore */ }
     set({ messages: [], cachedPlan: null });
+  },
+
+  setEngineVersion: (v) => {
+    localStorage.setItem(ENGINE_VERSION_KEY, v);
+    set({ engineVersion: v });
   },
 
   setPresentationName: (name: string) => {
@@ -549,6 +593,9 @@ export const useSlidiStore = create<SlidiState>()((set, get) => ({
   pendingEditContext: null,
   setPendingEditContext: (ctx) => set({ pendingEditContext: ctx }),
 
+  selectedElement: null,
+  setSelectedElement: (el) => set({ selectedElement: el }),
+
   branding: null,
   setBranding: (branding) => {
     if (branding) localStorage.setItem(BRANDING_KEY, JSON.stringify(branding));
@@ -588,13 +635,6 @@ export const useSlidiStore = create<SlidiState>()((set, get) => ({
     bc.close();
   },
 
-  collaborators: [],
-  isCollabActive: false,
-  collabSessionId: null,
-  setCollabActive: (v) => set({ isCollabActive: v }),
-  setCollabSessionId: (id) => set({ collabSessionId: id }),
-  setCollaborators: (collaborators) => set({ collaborators }),
-
   setAuthMode: (mode) => {
     localStorage.setItem(AUTH_MODE_KEY, mode);
     set({ authMode: mode });
@@ -631,6 +671,29 @@ export const useSlidiStore = create<SlidiState>()((set, get) => ({
   setPresentationMode: (mode) => {
     localStorage.setItem(PRESENTATION_MODE_KEY, mode);
     set({ presentationMode: mode });
+  },
+
+  setPremiumPresentationMode: (mode) => {
+    localStorage.setItem(PREMIUM_MODE_KEY, String(mode));
+    set({ premiumPresentationMode: mode });
+  },
+
+  setActivePersona: (id) => {
+    if (id) {
+      localStorage.setItem(ACTIVE_PERSONA_KEY, id);
+    } else {
+      localStorage.removeItem(ACTIVE_PERSONA_KEY);
+    }
+    set({ activePersona: id });
+  },
+
+  setDesignBrief: (brief) => {
+    if (brief && brief.trim()) {
+      localStorage.setItem(DESIGN_BRIEF_KEY, brief);
+    } else {
+      localStorage.removeItem(DESIGN_BRIEF_KEY);
+    }
+    set({ designBrief: brief });
   },
 
   sessions: typeof window !== "undefined" ? loadSessions() : [],
@@ -712,9 +775,8 @@ export const useSlidiStore = create<SlidiState>()((set, get) => ({
       streamingPreview: null,
       inspectMode: false,
       pendingEditContext: null,
+      selectedElement: null,
       currentSessionId: null,
-      isCollabActive: false,
-      collaborators: [],
     });
   },
 
@@ -750,10 +812,8 @@ export const useSlidiStore = create<SlidiState>()((set, get) => ({
       streamingPreview: null,
       inspectMode: false,
       pendingEditContext: null,
+      selectedElement: null,
       currentSessionId: id,
-      // Reset collab state so the new session's buttons reflect reality
-      isCollabActive: false,
-      collaborators: [],
     });
   },
 
@@ -826,6 +886,7 @@ export const useSlidiStore = create<SlidiState>()((set, get) => ({
       totalSlides: 1,
       inspectMode: false,
       pendingEditContext: null,
+      selectedElement: null,
       currentSessionId: null,
     });
   },
@@ -841,15 +902,17 @@ if (typeof window !== "undefined") {
     }
   });
 
-  window.addEventListener("storage", (e) => {
-    // Cross-tab sync for notes (e.g. presenter window updating notes or editor switching sessions)
-    if (e.key === "slidi_notes") {
-      try {
-        const notes = e.newValue ? JSON.parse(e.newValue) : {};
-        useSlidiStore.setState({ notes });
-      } catch (err) {
-        // ignore invalid json
+  if (typeof window.addEventListener === "function") {
+    window.addEventListener("storage", (e) => {
+      // Cross-tab sync for notes (e.g. presenter window updating notes or editor switching sessions)
+      if (e.key === "slidi_notes") {
+        try {
+          const notes = e.newValue ? JSON.parse(e.newValue) : {};
+          useSlidiStore.setState({ notes });
+        } catch (err) {
+          // ignore invalid json
+        }
       }
-    }
-  });
+    });
+  }
 }

@@ -1,5 +1,5 @@
 /**
- * Slide-level merge for collaborative editing.
+ * Slide-level merge utility.
  *
  * Strategy (last-write-wins at slide block level):
  *  - If local === remote           → no conflict, use either

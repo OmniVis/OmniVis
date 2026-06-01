@@ -13,7 +13,7 @@ function okJson(body: JsonResponse) {
 }
 
 const VALID_PRESENTATION = `export default function Presentation() {
-  const totalSlides = 8;
+  const totalSlides = 14;
   const [current, setCurrent] = React.useState(0);
   return <div>{current} / {totalSlides}</div>;
 }`;
@@ -41,7 +41,7 @@ describe("parseExpectedSlideCount (via generatePresentation.expectedCount)", () 
   beforeEach(() => { vi.restoreAllMocks(); });
   afterEach(() => { global.fetch = originalFetch; });
 
-  it("defaults to 8 when no slide count in message", async () => {
+  it("defaults to 14 when no slide count in message", async () => {
     global.fetch = vi.fn()
       .mockResolvedValueOnce(openAIResponse("plan"))
       .mockResolvedValueOnce(openAIResponse(VALID_PRESENTATION)) as typeof fetch;
@@ -50,7 +50,7 @@ describe("parseExpectedSlideCount (via generatePresentation.expectedCount)", () 
       [{ role: "user", content: "make a presentation about cats" }],
       "key", "THEME", "openai"
     );
-    expect(result.expectedCount).toBe(8);
+    expect(result.expectedCount).toBe(14);
   });
 
   it("parses '10 slides' from message", async () => {
@@ -204,7 +204,7 @@ describe("partial result handling", () => {
     );
 
     expect(result.isComplete).toBe(true);
-    expect(result.code).toContain("totalSlides = 8");
+    expect(result.code).toContain("totalSlides = 14");
   });
 });
 
@@ -265,7 +265,7 @@ describe("streaming via onChunk", () => {
   it("calls onChunk multiple times during pass 2 for openai provider", async () => {
     const codeChunks = [
       "export default function Presentation() {\n",
-      "  const totalSlides = 8;\n",
+      "  const totalSlides = 14;\n",
       "  const [current, setCurrent] = React.useState(0);\n",
       "  return <div>{current}/{totalSlides}</div>;\n",
       "}",
@@ -293,13 +293,13 @@ describe("streaming via onChunk", () => {
     expect(receivedChunks[1]).toBe(codeChunks[0] + codeChunks[1]);
     // Final result is valid
     expect(result.isComplete).toBe(true);
-    expect(result.code).toContain("totalSlides = 8");
+    expect(result.code).toContain("totalSlides = 14");
   });
 
   it("does NOT call onChunk during pass 1 (planning)", async () => {
     const codeChunks = [
       "export default function Presentation() {\n",
-      "  const totalSlides = 8;\n",
+      "  const totalSlides = 14;\n",
       "  return <div></div>;\n",
       "}",
     ];

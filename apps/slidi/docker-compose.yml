@@ -38,7 +38,6 @@ services:
       - USER_ID_HMAC_SECRET=${USER_ID_HMAC_SECRET}
       - DATA_ENCRYPTION_KEY=${DATA_ENCRYPTION_KEY}
       - WORKER_AUTH_TOKEN=${WORKER_AUTH_TOKEN}
-      - COLLAB_JWT_SECRET=${COLLAB_JWT_SECRET}
     networks:
       - aitools_net
     logging:
@@ -46,25 +45,6 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-
-  slidi-collab:
-    image: ${CI_REGISTRY_IMAGE}/collab:latest
-    container_name: tools-slidi-collab
-    restart: always
-    environment:
-      - PORT=3001
-      - COLLAB_JWT_SECRET=${COLLAB_JWT_SECRET}
-    networks:
-      - aitools_net
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-    # NGINX note: proxy /slidi/collab → http://slidi-collab:3001 with WS upgrade headers:
-    #   proxy_http_version 1.1;
-    #   proxy_set_header Upgrade $http_upgrade;
-    #   proxy_set_header Connection "upgrade";
 
 volumes:
   slidi_db:

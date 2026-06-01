@@ -15,8 +15,6 @@
 /dist
 .dev.vars
 
-# Collab sidecar compiled output
-/dist-collab
 # Cloudflare D1 local database files
 *.sqlite
 *.sqlite-journal
@@ -48,6 +46,9 @@ settings.local.json
 # Optional: If you want to keep the memory folder on Git but
 # ignore temporary system files inside it (rarely needed but safe)
 # .claude/config.json
+
+# Test coverage output
+/coverage
 
 # TypeScript incremental build cache
 tsconfig.tsbuildinfo

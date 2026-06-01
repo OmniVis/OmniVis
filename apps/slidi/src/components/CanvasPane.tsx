@@ -24,8 +24,20 @@ interface CanvasPaneProps {
   activeView: "preview" | "code";
 }
 
-import React, { useRef, useEffect, useState, memo } from "react";
+import React, { useRef, useEffect, useState, useCallback, memo } from "react";
 import { useDebounce } from "@/hooks/useDebounce";
+import ElementToolbar from "@/components/ElementToolbar";
+import PropertiesPanel from "@/components/PropertiesPanel";
+import {
+  patchIconInCode,
+  patchImageSrc,
+  patchImageFit,
+  patchImageAlt,
+  patchLinkHref,
+  patchLinkText,
+  patchLinkTarget,
+  patchTextInElement,
+} from "@/lib/patchJsx";
 
 /** Shared 16:9 slide box — renders at exactly 1920x1080 and scales to fit */
 function SlideBox({ children, shadow = true }: { children: React.ReactNode; shadow?: boolean }) {
@@ -78,6 +90,123 @@ function CanvasPaneInner({ activeView }: CanvasPaneProps): React.ReactElement {
   const setInspectMode = useSlidiStore((s) => s.setInspectMode);
   const streamingPreview = useSlidiStore((s) => s.streamingPreview);
   const branding = useSlidiStore((s) => s.branding);
+  const selectedElement = useSlidiStore((s) => s.selectedElement);
+  const setSelectedElement = useSlidiStore((s) => s.setSelectedElement);
+  const currentSlide = useSlidiStore((s) => s.currentSlide);
+  const pushVersion = useSlidiStore((s) => s.pushVersion);
+
+  const [showPanel, setShowPanel] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const canvasRef = useRef<HTMLElement>(null);
+  const [slideScale, setSlideScale] = useState(1);
+
+  // Track slide scale (mirrors SlideBox ResizeObserver logic)
+  useEffect(() => {
+    const el = canvasRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect;
+      if (width === 0 || height === 0) return;
+      const pad = width < 600 ? 16 : width < 1024 ? 32 : 48;
+      setSlideScale(Math.min((width - pad) / 1920, (height - pad) / 1080));
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // Close panel when selection is cleared externally
+  useEffect(() => {
+    if (!selectedElement) {
+      setShowPanel(false);
+      setError(null);
+    }
+  }, [selectedElement]);
+
+  function getToolbarPosition(el: typeof selectedElement) {
+    if (!el || !canvasRef.current) return { x: 0, y: 0 };
+    const container = canvasRef.current.getBoundingClientRect();
+    const boxW = 1920 * slideScale;
+    const boxH = 1080 * slideScale;
+    const boxLeft = container.left + (container.width - boxW) / 2;
+    const boxTop = container.top + (container.height - boxH) / 2;
+    const elCenterX = boxLeft + (el.rect.left + el.rect.width / 2) * slideScale;
+    const elTop = boxTop + el.rect.top * slideScale;
+    return { x: elCenterX, y: Math.max(elTop - 58, container.top + 8) };
+  }
+
+  function applyPatch(patched: string | null) {
+    if (!patched) {
+      // Patch failed — keep the properties panel open and display the error
+      setError("This element's structure is too complex to edit automatically. Try editing it directly in the 'Code' tab.");
+      return;
+    }
+    setError(null);
+    setShowPanel(false);
+    setSelectedElement(null);
+    setInspectMode(false);
+  }
+
+  const handleApplyIcon = useCallback((newValue: string) => {
+    if (!selectedElement) return;
+    const patched = patchIconInCode(generatedCode, currentSlide, selectedElement.currentValue, newValue);
+    applyPatch(patched);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedElement, generatedCode, currentSlide]);
+
+  const handleApplyImage = useCallback((changes: { src?: string; fit?: "cover" | "contain" | "fill"; alt?: string }) => {
+    if (!selectedElement) return;
+    let code = generatedCode;
+    if (changes.src) {
+      const p = patchImageSrc(code, currentSlide, selectedElement.currentValue, changes.src);
+      if (p) code = p;
+    }
+    if (changes.fit) {
+      const srcToUse = changes.src ?? selectedElement.currentValue;
+      const p = patchImageFit(code, currentSlide, srcToUse, changes.fit);
+      if (p) code = p;
+    }
+    if (changes.alt !== undefined) {
+      const srcToUse = changes.src ?? selectedElement.currentValue;
+      const p = patchImageAlt(code, currentSlide, srcToUse, changes.alt);
+      if (p) code = p;
+    }
+    applyPatch(code !== generatedCode ? code : null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedElement, generatedCode, currentSlide]);
+
+  const handleApplyText = useCallback((newText: string) => {
+    if (!selectedElement) return;
+    const patched = patchTextInElement(
+      generatedCode,
+      currentSlide,
+      selectedElement.tagName,
+      selectedElement.currentValue,
+      newText
+    );
+    applyPatch(patched);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedElement, generatedCode, currentSlide]);
+
+  const handleApplyLink = useCallback((changes: { href?: string; text?: string; newTab?: boolean }) => {
+    if (!selectedElement) return;
+    let code = generatedCode;
+    if (changes.href) {
+      const p = patchLinkHref(code, currentSlide, selectedElement.currentValue, changes.href);
+      if (p) code = p;
+    }
+    if (changes.text) {
+      const hrefNow = changes.href ?? selectedElement.currentValue;
+      const p = patchLinkText(code, currentSlide, hrefNow, changes.text);
+      if (p) code = p;
+    }
+    if (changes.newTab !== undefined) {
+      const hrefNow = changes.href ?? selectedElement.currentValue;
+      const p = patchLinkTarget(code, currentSlide, hrefNow, changes.newTab);
+      if (p) code = p;
+    }
+    applyPatch(code !== generatedCode ? code : null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedElement, generatedCode, currentSlide]);
 
   // Debounce streaming preview so the iframe remounts at most ~7×/sec
   // instead of on every AI token. Committed code (generatedCode) is never
@@ -100,7 +229,7 @@ function CanvasPaneInner({ activeView }: CanvasPaneProps): React.ReactElement {
   const hasContent = mounted && generatedCode && !isGenerating;
 
   return (
-    <section id="slidi-canvas-area" data-tour="canvas-pane" className="flex-1 relative bg-slate-100 flex flex-col overflow-hidden">
+    <section ref={canvasRef} id="slidi-canvas-area" data-tour="canvas-pane" className="flex-1 relative bg-slate-100 flex flex-col overflow-hidden">
       {/* Subtle grid background */}
       <div
         className="absolute inset-0 z-0 opacity-10"
@@ -116,14 +245,14 @@ function CanvasPaneInner({ activeView }: CanvasPaneProps): React.ReactElement {
         <div className="absolute inset-0 z-50 pointer-events-none animate-in fade-in duration-300">
           <div className="absolute inset-0 bg-blue-500/5 ring-inset ring-8 ring-blue-500/20 active:ring-blue-500/40 transition-all" />
           <div className="absolute top-6 left-1/2 -translate-x-1/2 pointer-events-auto">
-            <div className="flex items-center gap-3 bg-slate-900 border border-slate-800 px-4 py-2.5 shadow-2xl rounded-full">
+            <div className="flex items-center gap-3 bg-white border border-slate-200 px-4 py-2.5 shadow-lg rounded-full">
               <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-              <span className="text-[10px] font-black text-white uppercase tracking-widest">
+              <span className="text-[10px] font-black text-slate-700 uppercase tracking-widest">
                 Target Mode: Click an element to edit
               </span>
               <button
                 onClick={() => setInspectMode(false)}
-                className="ml-2 w-5 h-5 flex items-center justify-center rounded-full bg-slate-800 text-slate-400 hover:text-white transition-colors"
+                className="ml-2 w-5 h-5 flex items-center justify-center rounded-full bg-slate-100 text-slate-400 hover:text-slate-900 hover:bg-slate-200 transition-colors"
                 title="Cancel"
               >
                 ×
@@ -180,6 +309,38 @@ function CanvasPaneInner({ activeView }: CanvasPaneProps): React.ReactElement {
 
       {/* Slide Navigator — shown in preview mode when deck has multiple slides */}
       {!isGenerating && activeView === "preview" && <SlideNavigator />}
+
+      {/* Floating element toolbar */}
+      {selectedElement && inspectMode && (
+        <ElementToolbar
+          element={selectedElement}
+          position={getToolbarPosition(selectedElement)}
+          onReplace={() => {
+            setError(null);
+            setShowPanel(true);
+          }}
+          onMore={() => {
+            setError(null);
+            setShowPanel(true);
+          }}
+        />
+      )}
+
+      {/* Properties panel */}
+      {selectedElement && showPanel && inspectMode && (
+        <PropertiesPanel
+          element={selectedElement}
+          error={error}
+          onClose={() => {
+            setShowPanel(false);
+            setError(null);
+          }}
+          onApplyIcon={handleApplyIcon}
+          onApplyImage={handleApplyImage}
+          onApplyLink={handleApplyLink}
+          onApplyText={handleApplyText}
+        />
+      )}
     </section>
   );
 }

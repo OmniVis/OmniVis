@@ -33,20 +33,6 @@ build-slidi-image:
     - main
     - master
 
-build-slidi-collab-image:
-  stage: build-image
-  image: docker:24.0.5
-  services:
-    - docker:24.0.5-dind
-  before_script:
-    - echo "$CI_REGISTRY_PASSWORD" | docker login $CI_REGISTRY -u "$CI_REGISTRY_USER" --password-stdin
-  script:
-    - docker build -f Dockerfile.collab -t "$CI_REGISTRY_IMAGE/collab:latest" .
-    - docker push "$CI_REGISTRY_IMAGE/collab:latest"
-  only:
-    - main
-    - master
-
 deploy-slidi-vm:
   stage: deploy
   image: alpine:latest
@@ -65,7 +51,6 @@ deploy-slidi-vm:
     - 'echo "DATA_ENCRYPTION_KEY=$DATA_ENCRYPTION_KEY" >> .env'
     - 'echo "DB_PASSWORD=$DB_PASSWORD" >> .env'
     - 'echo "WORKER_AUTH_TOKEN=$WORKER_AUTH_TOKEN" >> .env'
-    - 'echo "COLLAB_JWT_SECRET=$COLLAB_JWT_SECRET" >> .env'
     - 'rsync -avz -e "sshpass -e ssh $SSH_OPTS" docker-compose.yml .env $SSH_USER@10.1.101.43:$DEPLOY_DIR/'
     - '$SSHPASS_CMD $SSH_USER@10.1.101.43 "sudo podman login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY"'
     - '$SSHPASS_CMD $SSH_USER@10.1.101.43 "cd $DEPLOY_DIR && sudo podman-compose pull"'
@@ -85,5 +70,3 @@ deploy-slidi-vm:
 #   DATA_ENCRYPTION_KEY  — 64-char hex key (32 bytes) for AES-256-GCM encryption of usernames
 #                          generate with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 #   WORKER_AUTH_TOKEN    — shared secret used to protect /api/admin/* endpoints
-#   COLLAB_JWT_SECRET    — shared secret for collab WebSocket JWT tokens (slidi ↔ slidi-collab)
-#                          generate with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"

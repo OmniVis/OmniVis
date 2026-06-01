@@ -49,13 +49,27 @@ export function generateSessionName(sessions: SessionMeta[]): string {
 export function extractSessionName(code: string, sessions: SessionMeta[]): string {
   if (!code) return generateSessionName(sessions);
 
-  const titleRegex = /(?:const\s+title\s*=\s*|title\s*:\s*)["'`]([^"'`]+)["'`](?:\s*;)?/i;
-  const match = code.match(titleRegex);
-  if (match && match[1]) {
-    return match[1].trim().slice(0, 50);
+  // 1. JSON slideData format: look for "title": "..." or title: "..." near the start.
+  //    Handles both quoted keys (JSON) and unquoted keys (JS objects / legacy JSX).
+  const jsonTitleRegex = /"?title"?\s*:\s*"([^"]{3,60})"/;
+  const jsonMatch = code.match(jsonTitleRegex);
+  if (jsonMatch && jsonMatch[1]) {
+    const candidate = jsonMatch[1].trim();
+    // Reject CSS / code-like strings (contain curly braces, semicolons, at-signs, etc.)
+    if (!/[{};@]/.test(candidate)) {
+      return candidate.slice(0, 50);
+    }
   }
 
-  const h1Regex = /<h1[^>]*>([^<]+)<\/h1>/i;
+  // 2. Legacy JSX: const title = "..."
+  const constTitleRegex = /(?:const\s+title\s*=\s*)["`']([^"`']{3,60})["`']/i;
+  const constMatch = code.match(constTitleRegex);
+  if (constMatch && constMatch[1]) {
+    return constMatch[1].trim().slice(0, 50);
+  }
+
+  // 3. Legacy JSX: first <h1> text content
+  const h1Regex = /<h1[^>]*>([^<]{3,60})<\/h1>/i;
   const h1Match = code.match(h1Regex);
   if (h1Match && h1Match[1]) {
     return h1Match[1].trim().slice(0, 50);

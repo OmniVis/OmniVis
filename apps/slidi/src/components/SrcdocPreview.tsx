@@ -20,10 +20,11 @@
 
 import { useRef, useEffect, useCallback, useState, useMemo, useLayoutEffect } from "react";
 import { Maximize2 } from "lucide-react";
-import type { ThemeId, Branding } from "@/store/slidiStore";
+import type { ThemeId, Branding, SelectedElement } from "@/store/slidiStore";
 import { useSlidiStore } from "@/store/slidiStore";
 import { THEME_STYLES } from "@/lib/themes";
 import { useLogoUrl } from "@/hooks/useLogoUrl";
+import { RENDERER_CODE_V0, RENDERER_CODE_V1, RENDERER_CODE_V2, RENDERER_CODE_V3, RENDERER_CODE_V4 } from "@/lib/presentationRenderer";
 
 /** Per-theme CSS variable values injected into the srcdoc :root. */
 const THEME_VARS: Record<ThemeId, string> = {
@@ -65,9 +66,13 @@ function processCode(code: string): string {
     .trim();
 }
 
-export function buildSrcdoc(code: string, theme: ThemeId, branding: Branding | null, forExport = false): string {
-  const safe = processCode(code);
+export function buildSrcdoc(code: string, theme: ThemeId, branding: Branding | null, forExport = false, engineVersion: "v0" | "v1" | "v2" | "v3" | "v4" = "v4"): string {
+  const isJson = code.trim().startsWith('{');
+  const safe = isJson ? code.replace(/<\/script>/gi, "<\\/script>").trim() : processCode(code);
   const vars = getThemeVars(theme);
+  
+  // Decide which renderer to inject based on the engine version
+  const rendererScript = engineVersion === "v0" ? RENDERER_CODE_V0 : engineVersion === "v1" ? RENDERER_CODE_V1 : engineVersion === "v2" ? RENDERER_CODE_V2 : engineVersion === "v3" ? RENDERER_CODE_V3 : RENDERER_CODE_V4;
 
   const showLogo = branding && branding.logoUrl && (branding.display === "both" || branding.display === "logo");
   const showName = branding && branding.name && (branding.display === "both" || branding.display === "name");
@@ -207,8 +212,14 @@ export function buildSrcdoc(code: string, theme: ThemeId, branding: Branding | n
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     :root { ${vars} }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
     body { 
-      margin: 0; 
       background: ${forExport ? "#f1f5f9" : "var(--sl-bg)"};
       /* Clean, sharp text rendering */
       font-smooth: always;
@@ -309,8 +320,9 @@ export function buildSrcdoc(code: string, theme: ThemeId, branding: Branding | n
     .sl-delay-5 { animation-delay: .5s }
 
     /* Nav buttons: hidden until the user hovers over the slide */
-    /* Inspect mode — element hover highlight */
-    .__sl_hover { outline: 2px solid var(--sl-accent) !important; outline-offset: 2px; cursor: crosshair !important; }
+    /* Inspect mode — element hover / selection */
+    .__sl_hover { outline: 2px dashed var(--sl-accent) !important; outline-offset: 2px; cursor: crosshair !important; }
+    .__sl_selected { outline: 2px solid #6c63ff !important; outline-offset: 3px; }
 
     #sl-fs-exit { display: none; }
     :fullscreen #sl-fs-exit { display: flex; }
@@ -356,15 +368,15 @@ export function buildSrcdoc(code: string, theme: ThemeId, branding: Branding | n
 <body class="${forExport ? "sl-export-mode" : ""}">
   ${forExport ? '<div class="sl-stage"><div class="sl-box">' : ""}
   <div id="root">
-    <div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#94a3b8;font-family:system-ui,-apple-system,sans-serif;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:0.2em;gap:16px;">
-      <img 
+    <div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#94a3b8;font-family:system-ui,-apple-system,sans-serif;font-size:clamp(11px,1.4vw,16px);font-weight:700;text-transform:uppercase;letter-spacing:0.18em;gap:clamp(16px,2.5vh,28px);">
+      <img
         src="${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/assets/branding/Brand_Icon.svg"
-        style="width:32px;height:32px;opacity:0.2;animation:sl-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;"
+        style="width:clamp(40px,6vw,72px);height:clamp(40px,6vw,72px);opacity:0.25;animation:sl-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;"
       />
-      Loading presentation...
+      Loading presentation…
     </div>
     <style>
-      @keyframes sl-pulse { 0%, 100% { opacity: 0.2; } 50% { opacity: 0.1; } }
+      @keyframes sl-pulse { 0%, 100% { opacity: 0.25; } 50% { opacity: 0.08; } }
     </style>
   </div>
   <div id="err"></div>
@@ -472,12 +484,16 @@ export function buildSrcdoc(code: string, theme: ThemeId, branding: Branding | n
         var node;
         var maxPx = 0;
         var bestText = "";
+        var SKIP_TAGS = new Set(['STYLE', 'SCRIPT', 'NOSCRIPT', 'HEAD', 'META', 'LINK']);
         while (node = walker.nextNode()) {
           var txt = node.nodeValue.trim();
           if (txt.length < 3) continue;
           var parent = node.parentElement;
           if (!parent) continue;
+          // Skip invisible/non-content elements (style/script tags contain CSS/JS text)
+          if (SKIP_TAGS.has(parent.tagName)) continue;
           var style = window.getComputedStyle(parent);
+          if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') continue;
           var size = parseFloat(style.fontSize) || 0;
           if (size > maxPx) {
              maxPx = size;
@@ -550,23 +566,97 @@ export function buildSrcdoc(code: string, theme: ThemeId, branding: Branding | n
       else window.addEventListener('load', init);
     })();
   </script>
-  <script>
-  /* Inline Visual Editing — Direct on-canvas capture. */
+  ${!forExport ? `<script>
+  /* Visual Editor Inspector — element targeting, selection ring, sl-element-select postMessage */
   (function() {
     var active = false;
-    var editor = null;
+    var selectedEl = null;
+    var badge = null;
 
-    function clear() {
-      document.querySelectorAll('.__sl_hover').forEach(function(n) {
-        n.classList.remove('__sl_hover');
-      });
+    function getXPath(el) {
+      var parts = [];
+      var cur = el;
+      while (cur && cur.nodeType === 1 && cur !== document.body) {
+        var idx = 1;
+        var sib = cur.previousElementSibling;
+        while (sib) { if (sib.tagName === cur.tagName) idx++; sib = sib.previousElementSibling; }
+        parts.unshift(cur.tagName.toLowerCase() + '[' + idx + ']');
+        cur = cur.parentElement;
+      }
+      return '//' + parts.join('/');
     }
 
-    function removeEditor() {
-      if (editor) {
-        document.body.removeChild(editor);
-        editor = null;
+    function findTarget(startEl) {
+      var cur = startEl;
+      while (cur && cur !== document.body) {
+        if (cur.classList && cur.classList.contains('material-symbols-rounded')) {
+          return { el: cur, type: 'icon', value: (cur.textContent || '').trim() };
+        }
+        if (cur.tagName === 'IMG') {
+          return { el: cur, type: 'image', value: cur.getAttribute('src') || '' };
+        }
+        if (cur.tagName === 'A') {
+          return { el: cur, type: 'link', value: cur.getAttribute('href') || '' };
+        }
+        if (/^H[1-6]$/.test(cur.tagName)) {
+          return { el: cur, type: 'text', value: (cur.textContent || '').trim() };
+        }
+        if (cur.tagName === 'P') {
+          return { el: cur, type: 'text', value: (cur.textContent || '').trim() };
+        }
+        if (cur.tagName === 'SPAN' && cur.classList && !cur.classList.contains('material-symbols-rounded')) {
+          var sv = (cur.textContent || '').trim();
+          if (sv) return { el: cur, type: 'text', value: sv };
+        }
+        if (cur.tagName === 'LI') {
+          var lv = (cur.textContent || '').trim();
+          if (lv) return { el: cur, type: 'text', value: lv };
+        }
+        if (cur.tagName === 'BUTTON') {
+          var bv = (cur.textContent || '').trim();
+          if (bv) return { el: cur, type: 'text', value: bv };
+        }
+        if (cur.tagName === 'DIV') {
+          // Only treat a DIV as a text target if it has no child element nodes
+          // (i.e. it's a leaf text container like <div className="stat">42%</div>)
+          var hasEl = false;
+          for (var ci = 0; ci < cur.childNodes.length; ci++) {
+            if (cur.childNodes[ci].nodeType === 1) { hasEl = true; break; }
+          }
+          if (!hasEl) {
+            var dv = (cur.textContent || '').trim();
+            if (dv) return { el: cur, type: 'text', value: dv };
+          }
+        }
+        if (cur.dataset && cur.dataset.editable) {
+          return { el: cur, type: cur.dataset.editable || 'generic', value: (cur.textContent || '').trim() };
+        }
+        cur = cur.parentElement;
       }
+      return null;
+    }
+
+    function clearHover() {
+      document.querySelectorAll('.__sl_hover').forEach(function(n) { n.classList.remove('__sl_hover'); });
+    }
+
+    function removeBadge() {
+      if (badge && badge.parentNode) { badge.parentNode.removeChild(badge); badge = null; }
+    }
+
+    function clearSelection() {
+      if (selectedEl) { selectedEl.classList.remove('__sl_selected'); selectedEl = null; }
+      removeBadge();
+    }
+
+    function showBadge(el, type) {
+      removeBadge();
+      var labels = { icon: 'Icon', image: 'Image', link: 'Link', text: 'Text', generic: 'Element' };
+      var rect = el.getBoundingClientRect();
+      badge = document.createElement('div');
+      badge.textContent = labels[type] || type;
+      badge.setAttribute('style', 'position:fixed;background:#6c63ff;color:#fff;font:600 10px/1 system-ui,sans-serif;padding:2px 6px;border-radius:3px;z-index:100001;pointer-events:none;letter-spacing:0.04em;text-transform:uppercase;top:' + (rect.bottom + 4) + 'px;left:' + rect.left + 'px');
+      document.body.appendChild(badge);
     }
 
     window.addEventListener('message', function(e) {
@@ -574,89 +664,53 @@ export function buildSrcdoc(code: string, theme: ThemeId, branding: Branding | n
       if (e.data.type === 'sl-inspect-mode') {
         active = !!e.data.value;
         document.body.style.cursor = active ? 'crosshair' : '';
-        if (!active) {
-          clear();
-          removeEditor();
-        }
+        if (!active) { clearHover(); clearSelection(); }
       }
     });
 
     document.addEventListener('mouseover', function(e) {
-      if (!active || editor) return;
-      clear();
-      e.target.classList.add('__sl_hover');
+      if (!active) return;
+      clearHover();
+      var target = findTarget(e.target);
+      if (target) target.el.classList.add('__sl_hover');
     }, true);
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && active) {
+        clearSelection();
+        clearHover();
+        window.parent.postMessage({ type: 'sl-element-deselect' }, '*');
+      }
+    });
 
     document.addEventListener('click', function(e) {
-      if (!active || editor) return;
+      if (!active) return;
       e.preventDefault();
       e.stopImmediatePropagation();
-      
-      var el = e.target;
-      var originalText = (el.textContent || '').trim();
-      var rect = el.getBoundingClientRect();
-      var style = window.getComputedStyle(el);
-
-      // Create inline editor overlay
-      editor = document.createElement('textarea');
-      editor.value = originalText;
-      editor.style.position = 'fixed';
-      editor.style.top = rect.top + 'px';
-      editor.style.left = rect.left + 'px';
-      editor.style.width = rect.width + 'px';
-      editor.style.minHeight = rect.height + 'px';
-      editor.style.zIndex = '100000';
-      editor.style.background = 'white';
-      editor.style.color = 'black';
-      editor.style.border = '2px solid var(--sl-accent)';
-      editor.style.padding = style.padding;
-      editor.style.fontSize = style.fontSize;
-      editor.style.fontWeight = style.fontWeight;
-      editor.style.fontFamily = style.fontFamily;
-      editor.style.lineHeight = style.lineHeight;
-      editor.style.textAlign = style.textAlign;
-      editor.style.boxShadow = '0 10px 25px rgba(0,0,0,0.15)';
-      editor.style.outline = 'none';
-      editor.style.resize = 'none';
-      editor.style.borderRadius = '4px';
-
-      document.body.appendChild(editor);
-      editor.focus();
-      editor.setSelectionRange(originalText.length, originalText.length);
-
-      function commit() {
-        var newText = editor.value.trim();
-        if (newText && newText !== originalText) {
-          window.parent.postMessage({
-            type: 'sl-commit-visual-edit',
-            tagName: el.tagName.toLowerCase(),
-            oldText: originalText,
-            newText: newText
-          }, '*');
-        }
-        removeEditor();
-        active = false;
-        document.body.style.cursor = '';
-        clear();
+      var target = findTarget(e.target);
+      clearSelection();
+      if (!target) {
+        window.parent.postMessage({ type: 'sl-element-deselect' }, '*');
+        return;
       }
-
-      editor.addEventListener('blur', commit);
-      editor.addEventListener('keydown', function(evt) {
-        if (evt.key === 'Enter' && !evt.shiftKey) {
-          evt.preventDefault();
-          commit();
-        }
-        if (evt.key === 'Escape') {
-          removeEditor();
-        }
-      });
-
+      selectedEl = target.el;
+      selectedEl.classList.add('__sl_selected');
+      showBadge(selectedEl, target.type);
+      var rect = selectedEl.getBoundingClientRect();
+      window.parent.postMessage({
+        type: 'sl-element-select',
+        elementType: target.type,
+        currentValue: target.value,
+        rect: { top: rect.top, left: rect.left, width: rect.width, height: rect.height },
+        tagName: selectedEl.tagName.toLowerCase(),
+        xpath: getXPath(selectedEl)
+      }, '*');
     }, true);
   })();
-  </script>
+  </script>` : ""}
   <script type="text/babel" data-type="module" data-presets="react,typescript">
 // AI GENERATED CODE START
-${safe}
+${isJson ? `const slideData = ${safe};\n${rendererScript}` : safe}
 // AI GENERATED CODE END
 
 ;(function() {
@@ -726,7 +780,8 @@ export default function SrcdocPreview({
   inspectMode = false,
   branding,
   syncChannel,
-  onElementClick,
+  onElementSelect,
+  onElementDeselect,
   onCommitEdit,
   controlledSlide,
 }: {
@@ -736,9 +791,12 @@ export default function SrcdocPreview({
   branding: Branding | null;
   syncChannel?: string;
   controlledSlide?: number;
-  onElementClick?: (tagName: string, text: string) => void;
+  onElementSelect?: (payload: SelectedElement) => void;
+  onElementDeselect?: () => void;
   onCommitEdit?: (tagName: string, oldText: string, newText: string) => void;
 }) {
+  const engineVersion = useSlidiStore((s) => s.engineVersion);
+
   // ── Double-buffer crossfade ────────────────────────────────────────────────
   // Two iframes (A and B) alternate as the visible one. When srcdoc changes,
   // the inactive iframe loads the new content in the background. Once it fires
@@ -752,6 +810,9 @@ export default function SrcdocPreview({
   const [activeBuffer, setActiveBuffer] = useState<"a" | "b">("a");
   const pendingRef = useRef<"a" | "b" | null>(null);
   const isInitialized = useRef(false);
+  // Snapshot of currentSlide captured when srcdoc changes — before the new
+  // iframe fires sl_slide_change:0 and resets the store.
+  const pendingSlideRef = useRef(0);
 
   // Keep the mutable ref in sync with state so callbacks stay fresh.
   useLayoutEffect(() => { activeBufferRef.current = activeBuffer; }, [activeBuffer]);
@@ -780,6 +841,13 @@ export default function SrcdocPreview({
     iframeARef.current?.contentWindow?.postMessage({ type: "sl-inspect-mode", value: inspectMode }, "*");
     if (pendingRef.current === "a") {
       pendingRef.current = null;
+      // Restore slide position using the snapshot taken when srcdoc changed.
+      // We cannot read from the store here because the new iframe has already
+      // fired sl_slide_change:0 and reset store.currentSlide to 0.
+      const slide = pendingSlideRef.current;
+      for (let i = 0; i < slide; i++) {
+        iframeARef.current?.contentWindow?.postMessage({ type: "SLIDI_NAV", direction: "next" }, "*");
+      }
       setActiveBuffer("a");
     }
   }, [inspectMode]);
@@ -788,6 +856,11 @@ export default function SrcdocPreview({
     iframeBRef.current?.contentWindow?.postMessage({ type: "sl-inspect-mode", value: inspectMode }, "*");
     if (pendingRef.current === "b") {
       pendingRef.current = null;
+      // Restore slide position using the snapshot taken when srcdoc changed.
+      const slide = pendingSlideRef.current;
+      for (let i = 0; i < slide; i++) {
+        iframeBRef.current?.contentWindow?.postMessage({ type: "SLIDI_NAV", direction: "next" }, "*");
+      }
       setActiveBuffer("b");
     }
   }, [inspectMode]);
@@ -825,9 +898,18 @@ export default function SrcdocPreview({
     }
 
     const handler = (e: MessageEvent) => {
-      // Internal visual editing logic
-      if (e.data?.type === "sl-element-click" && onElementClick) {
-        onElementClick(e.data.tagName as string, e.data.text as string);
+      // Visual editor messages
+      if (e.data?.type === "sl-element-select" && onElementSelect) {
+        onElementSelect({
+          elementType: e.data.elementType,
+          currentValue: e.data.currentValue,
+          rect: e.data.rect,
+          tagName: e.data.tagName,
+          xpath: e.data.xpath,
+        });
+      }
+      if (e.data?.type === "sl-element-deselect" && onElementDeselect) {
+        onElementDeselect();
       }
       if (e.data?.type === "sl-commit-visual-edit" && onCommitEdit) {
         onCommitEdit(e.data.tagName as string, e.data.oldText as string, e.data.newText as string);
@@ -861,7 +943,7 @@ export default function SrcdocPreview({
       bc?.close();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [syncChannel, onElementClick, onCommitEdit, postToActive]);
+  }, [syncChannel, onElementSelect, onElementDeselect, onCommitEdit, postToActive]);
 
   // Handle controlled slide updates
   useEffect(() => {
@@ -889,11 +971,11 @@ export default function SrcdocPreview({
       const resolvedBranding = branding
         ? { ...branding, logoUrl: resolvedLogoUrl }
         : null;
-      return buildSrcdoc(code, theme, resolvedBranding);
+      return buildSrcdoc(code, theme, resolvedBranding, false, engineVersion);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [code, resolvedLogoUrl, branding?.id, branding?.name, branding?.display,
-     branding?.position, branding?.type, branding?.size, branding?.sizePercentage, branding?.padding]
+     branding?.position, branding?.type, branding?.size, branding?.sizePercentage, branding?.padding, engineVersion]
   );
 
   // Dynamically update theme without reloading the iframe
@@ -912,6 +994,9 @@ export default function SrcdocPreview({
       isInitialized.current = true;
       return;
     }
+    // Snapshot current slide NOW — before the new iframe loads, resets to 0,
+    // and fires sl_slide_change:0 which would overwrite the store.
+    pendingSlideRef.current = useSlidiStore.getState().currentSlide;
     const inactive = activeBufferRef.current === "a" ? "b" : "a";
     pendingRef.current = inactive;
     if (inactive === "b") setSrcdocB(srcdoc);

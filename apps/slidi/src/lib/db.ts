@@ -40,14 +40,6 @@ CREATE TABLE IF NOT EXISTS brandings (
   created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS collab_invites (
-  id              TEXT PRIMARY KEY,
-  presentation_id TEXT NOT NULL,
-  created_by      TEXT,
-  expires_at      TIMESTAMP NOT NULL,
-  created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
 -- Add view_count column if it was created before this migration.
 -- IF NOT EXISTS is idempotent so it is safe to run on every startup.
 ALTER TABLE presentations ADD COLUMN IF NOT EXISTS view_count INTEGER DEFAULT 0;

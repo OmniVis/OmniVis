@@ -2,7 +2,16 @@
 
 All notable changes to Slidi will be documented in this file.
 
-## [Recent] - 2026-05-18
+## [Recent] - 2026-06-01
+
+### Added
+- **V4 Executive Engine**: Introduced the hyper-modern V4 engine featuring `BENTO-GRID` and `NARRATIVE-CHART` layouts. Integrated top-tier consulting principles (McKinsey/BCG) directly into the AI prompt to enforce "Action Titles" and the "60-Second Rule" (one message per slide).
+- **Settings UI Redesign**: Overhauled the Settings Engine tab with a beautiful, categorized CSS Grid layout, grouping options into "Current Standard", "Alternative Modes", and "Legacy Support" with subtle hover micro-animations.
+
+### Fixed
+- **Engine Version Typings**: Fixed a strict typing issue causing the Turbopack build to fail when parsing the new V4 engine exports in `slidiStore.ts`.
+
+## [Previous] - 2026-05-18
 
 ### Added
 - **Interactive Onboarding Walkthrough**: Implemented a premium, layout-aware interactive step-by-step tour for new users. Features a glassmorphic welcome card, a hardware-accelerated SVG spotlight masking layer with ResizeObserver-based boundary tracking, action-gated progress (requires toggling the Paintbrush visual editor to advance from Step 3), and automated sandbox template seeding for blank states.

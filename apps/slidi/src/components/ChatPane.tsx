@@ -2,7 +2,7 @@
 
 import { useSlidiStore, Provider } from "@/store/slidiStore";
 import { generatePresentation, generatePlanModeResponse, generatePlanQuestions, generateOutlineFromAnswers, generateSlideEdit, detectOutlineApproval } from "@/lib/ai";
-import { buildWindowedEditMessages, spliceSlideBlock } from "@/lib/ai/contextManager";
+import { buildWindowedEditMessages, spliceSlideBlock, extractSlideBlock } from "@/lib/ai/contextManager";
 import { classifyTask, selectModelForTask } from "@/lib/ai/adessoOptimizer";
 import { getCachedLayout, setCachedLayout, detectSlideType, clearSemanticCache } from "@/lib/ai/semanticCache";
 import { useVoiceToText } from "@/hooks/useVoiceToText";
@@ -37,7 +37,12 @@ import {
   Settings,
   Briefcase,
   Smile,
+  Palette,
+  FileText,
 } from "lucide-react";
+import { DesignPersonaPicker } from "@/components/DesignPersonaPicker";
+import { DesignBriefEditor } from "@/components/DesignBriefEditor";
+import { getPersonaById } from "@/lib/designPersonas";
 import { ADESSO_MODELS, isFreeAdessoModel } from "@/lib/ai";
 import { useRef, useState, useEffect, KeyboardEvent, memo, useCallback } from "react";
 import { parsePlanResponse, buildAttachedFilesBlock } from "@/lib/prompt";
@@ -92,6 +97,7 @@ function ChatPaneInner({ onSettings, onInsecure }: ChatPaneProps) {
   const setIsPlanModeActive = useSlidiStore((s) => s.setIsPlanModeActive);
   const userContext = useSlidiStore((s) => s.userContext);
   const presentationMode = useSlidiStore((s) => s.presentationMode);
+  const premiumPresentationMode = useSlidiStore((s) => s.premiumPresentationMode);
   const setPresentationMode = useSlidiStore((s) => s.setPresentationMode);
   const setPresentationName = useSlidiStore((s) => s.setPresentationName);
   const sessions = useSlidiStore((s) => s.sessions);
@@ -99,8 +105,18 @@ function ChatPaneInner({ onSettings, onInsecure }: ChatPaneProps) {
   const clearAttachedFiles = useSlidiStore((s) => s.clearAttachedFiles);
   const currentSlide = useSlidiStore((s) => s.currentSlide);
   const totalSlides = useSlidiStore((s) => s.totalSlides);
+  const activePersona = useSlidiStore((s) => s.activePersona);
+  const designBrief = useSlidiStore((s) => s.designBrief);
   const [input, setInput] = useState("");
+  const [showPersonaPicker, setShowPersonaPicker] = useState(false);
+  const [showBriefEditor, setShowBriefEditor] = useState(false);
+  const [personaPickerPos, setPersonaPickerPos] = useState({ right: 0, bottom: 0 });
+  const [briefEditorPos, setBriefEditorPos] = useState({ right: 0, bottom: 0 });
+  const personaPickerRef = useRef<HTMLDivElement>(null);
+  const briefEditorRef = useRef<HTMLDivElement>(null);
   const [isMounted, setIsMounted] = useState(false);
+  const [generationElapsed, setGenerationElapsed] = useState(0);
+  const generationTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [showModelDropdown, setShowModelDropdown] = useState(false);
@@ -138,13 +154,41 @@ function ChatPaneInner({ onSettings, onInsecure }: ChatPaneProps) {
     }
   }, []);
 
-  // Guard against SSR/client hydration mismatch + close dropdown on outside click
+  // Start/stop elapsed-time counter while generating
+  useEffect(() => {
+    if (isGenerating) {
+      setGenerationElapsed(0);
+      generationTimerRef.current = setInterval(() => {
+        setGenerationElapsed((s) => s + 1);
+      }, 1000);
+    } else {
+      if (generationTimerRef.current) {
+        clearInterval(generationTimerRef.current);
+        generationTimerRef.current = null;
+      }
+      setGenerationElapsed(0);
+    }
+    return () => {
+      if (generationTimerRef.current) {
+        clearInterval(generationTimerRef.current);
+        generationTimerRef.current = null;
+      }
+    };
+  }, [isGenerating]);
+
+  // Guard against SSR/client hydration mismatch + close dropdowns on outside click
   useEffect(() => {
     setIsMounted(true);
 
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setShowModelDropdown(false);
+      }
+      if (personaPickerRef.current && !personaPickerRef.current.contains(e.target as Node)) {
+        setShowPersonaPicker(false);
+      }
+      if (briefEditorRef.current && !briefEditorRef.current.contains(e.target as Node)) {
+        setShowBriefEditor(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -256,6 +300,7 @@ function ChatPaneInner({ onSettings, onInsecure }: ChatPaneProps) {
     setIsPlanModeActive(false);
     addMessage({ role: "system", content: "Outline approved — generating your presentation..." });
     setIsGenerating(true);
+    let planTimeoutId: ReturnType<typeof setTimeout> | undefined;
     try {
       // Extract the outline text from the last plan response message so the
       // generator follows the exact slide titles and count from the outline.
@@ -267,7 +312,8 @@ function ChatPaneInner({ onSettings, onInsecure }: ChatPaneProps) {
       const effectiveAdessoModel = provider === "adesso"
         ? selectModelForTask(adessoModel, classifyTask(planMessages[planMessages.length - 1]?.content ?? ""))
         : adessoModel;
-      const result = await generatePresentation(
+      const GENERATION_TIMEOUT_MS = 8 * 60 * 1000;
+      const planGenPromise = generatePresentation(
         planMessages,
         apiKey,
         THEMES[theme].systemPromptBlock,
@@ -278,11 +324,20 @@ function ChatPaneInner({ onSettings, onInsecure }: ChatPaneProps) {
           if (stage === "generating") updateGenerationStatus("Generating full presentation code...");
           if (stage === "finalizing") updateGenerationStatus("Finalizing and repairing output...");
         },
-        { skipPlanning: true, cachedPlan, userContext, presentationMode },
+        { skipPlanning: true, cachedPlan, userContext, presentationMode, activePersona, designBrief, premiumPresentationMode },
         (partial) => setStreamingPreview(partial)
       );
+      const planTimeoutPromise = new Promise<never>((_, reject) => {
+        planTimeoutId = setTimeout(
+          () => reject(new Error("Generation timed out — the AI took too long. Please try again.")),
+          GENERATION_TIMEOUT_MS
+        );
+      });
+      const result = await Promise.race([planGenPromise, planTimeoutPromise]);
+      clearTimeout(planTimeoutId);
       await handleGenerationResult(result, null, "", true);
     } catch (err: unknown) {
+      clearTimeout(planTimeoutId);
       setStreamingPreview(null);
       const message = err instanceof Error ? err.message : "Unknown error";
       useSlidiStore.setState((state) => {
@@ -294,7 +349,7 @@ function ChatPaneInner({ onSettings, onInsecure }: ChatPaneProps) {
       setIsGenerating(false);
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-  }, [setIsPlanModeActive, addMessage, setIsGenerating, provider, adessoModel, apiKey, theme, userContext, presentationMode, updateGenerationStatus, setStreamingPreview, handleGenerationResult]);
+  }, [setIsPlanModeActive, addMessage, setIsGenerating, provider, adessoModel, apiKey, theme, userContext, presentationMode, premiumPresentationMode, activePersona, designBrief, updateGenerationStatus, setStreamingPreview, handleGenerationResult]);
 
   /** Wizard: submit the current pair of answers, advance or trigger outline generation. */
   const handlePairSubmit = useCallback(async () => {
@@ -474,7 +529,11 @@ function ChatPaneInner({ onSettings, onInsecure }: ChatPaneProps) {
           );
 
           if (updatedBlock) {
-            const updatedCode = spliceSlideBlock(generatedCode, currentSlide, updatedBlock);
+            // Sanitize: AI sometimes appends empty blocks for subsequent slides.
+            // Re-extract only the target slide block so those extras are stripped.
+            const sanitized = extractSlideBlock(updatedBlock, currentSlide);
+            const safeBlock = sanitized ? sanitized.block : updatedBlock;
+            const updatedCode = spliceSlideBlock(generatedCode, currentSlide, safeBlock);
             if (updatedCode) {
               pushVersion(updatedCode);
               useSlidiStore.setState((state) => {
@@ -529,6 +588,7 @@ function ChatPaneInner({ onSettings, onInsecure }: ChatPaneProps) {
       addMessage({ role: "system", content: skipPlanning ? "Generating presentation..." : "Planning deck structure..." });
     }
 
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
     try {
       const contextPrefix = generatedCode && totalSlides > 1
         ? `[Currently viewing slide ${currentSlide + 1} of ${totalSlides}] `
@@ -541,7 +601,8 @@ function ChatPaneInner({ onSettings, onInsecure }: ChatPaneProps) {
       const cachedHint = cachedLayout ?? (slideType ? null : null);
       const effectiveCachedPlan = cachedHint ?? cachedPlan;
 
-      const result = await generatePresentation(
+      const GENERATION_TIMEOUT_MS = 8 * 60 * 1000; // 8 minutes
+      const genPromise = generatePresentation(
         [...messages, { role: "user", content: aiUserContent }],
         apiKey,
         THEMES[theme].systemPromptBlock,
@@ -552,12 +613,21 @@ function ChatPaneInner({ onSettings, onInsecure }: ChatPaneProps) {
           if (stage === "generating") updateGenerationStatus("Generating full presentation code...");
           if (stage === "finalizing") updateGenerationStatus("Finalizing and repairing output...");
         },
-        { skipPlanning, cachedPlan: effectiveCachedPlan, userContext, presentationMode },
+        { skipPlanning, cachedPlan: effectiveCachedPlan, userContext, presentationMode, activePersona, designBrief, premiumPresentationMode },
         (partial) => setStreamingPreview(partial)
       );
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(
+          () => reject(new Error("Generation timed out — the AI took too long. Please try a shorter request or try again.")),
+          GENERATION_TIMEOUT_MS
+        );
+      });
+      const result = await Promise.race([genPromise, timeoutPromise]);
+      clearTimeout(timeoutId);
 
       await handleGenerationResult(result, slideType, trimmed, skipPlanning);
     } catch (err: unknown) {
+      clearTimeout(timeoutId);
       setStreamingPreview(null);
       const message = err instanceof Error ? err.message : "Unknown error";
       useSlidiStore.setState((state) => {
@@ -573,7 +643,7 @@ function ChatPaneInner({ onSettings, onInsecure }: ChatPaneProps) {
       setIsGenerating(false);
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-  }, [input, isGenerating, apiKey, addMessage, setPendingEditContext, setIsGenerating, generatedCode, messages, theme, provider, adessoModel, updateGenerationStatus, cachedPlan, setCachedPlan, setStreamingPreview, pushVersion, pendingEditContext, planMode, planPhase, setIsPlanModeActive, userContext, presentationMode, triggerGenerationFromPlan, handleGenerationResult, attachedFiles]);
+  }, [input, isGenerating, apiKey, addMessage, setPendingEditContext, setIsGenerating, generatedCode, messages, theme, provider, adessoModel, updateGenerationStatus, cachedPlan, setCachedPlan, setStreamingPreview, pushVersion, pendingEditContext, planMode, planPhase, setIsPlanModeActive, userContext, presentationMode, premiumPresentationMode, activePersona, designBrief, triggerGenerationFromPlan, handleGenerationResult, attachedFiles]);
 
   const handleRegenerate = useCallback(() => {
     // Find the last user message and resubmit it
@@ -621,6 +691,7 @@ function ChatPaneInner({ onSettings, onInsecure }: ChatPaneProps) {
     if (planMode && isPlanModeActive) {
       addMessage({ role: "system", content: "Plan Mode deactivated." });
     }
+    if (!planMode) setSlideEditMode(false);
     setPlanMode(!planMode);
     setPlanPhase("idle");
     setPlanQuestions([]);
@@ -628,7 +699,7 @@ function ChatPaneInner({ onSettings, onInsecure }: ChatPaneProps) {
     setPlanCurrentPair(0);
     setPlanPairInputs(["", ""]);
     setIsPlanModeActive(false);
-  }, [planMode, isPlanModeActive, planPhase, setPlanMode, addMessage, setIsPlanModeActive]);
+  }, [planMode, isPlanModeActive, planPhase, setPlanMode, addMessage, setIsPlanModeActive, setSlideEditMode]);
 
   return (
     <>
@@ -908,6 +979,13 @@ function ChatPaneInner({ onSettings, onInsecure }: ChatPaneProps) {
                             : msg.content === "Finalizing and repairing output..."
                             ? "Validating & cleaning code..."
                             : "Working on it..."}
+                          {generationElapsed >= 10 && (
+                            <span className="ml-1.5 tabular-nums opacity-70">
+                              {generationElapsed >= 60
+                                ? `${Math.floor(generationElapsed / 60)}m ${generationElapsed % 60}s`
+                                : `${generationElapsed}s`}
+                            </span>
+                          )}
                         </span>
                       </div>
                     </div>
@@ -975,7 +1053,7 @@ function ChatPaneInner({ onSettings, onInsecure }: ChatPaneProps) {
           {/* Slide edit mode pill — shown when a presentation is loaded with multiple slides */}
           {isMounted && generatedCode && totalSlides > 1 && (
             <button
-              onClick={() => setSlideEditMode((v) => !v)}
+              onClick={() => { if (!slideEditMode) setPlanMode(false); setSlideEditMode((v) => !v); }}
               title={slideEditMode ? "Click to edit the full presentation instead" : "Click to limit edits to the current slide only"}
               className={`flex items-center gap-1.5 border rounded-xl px-3 py-1.5 w-fit mb-2 text-[11px] font-bold uppercase tracking-wider transition-all animate-in slide-in-from-bottom-2 duration-300 ${
                 slideEditMode
@@ -1051,149 +1129,95 @@ function ChatPaneInner({ onSettings, onInsecure }: ChatPaneProps) {
           />
           )}
 
-          {/* Input Tools & Submit */}
-          <div className="flex items-center justify-between gap-1.5 mt-2 px-1">
-            {/* Tool Row */}
-            <div className="flex flex-wrap items-center gap-1 flex-1 min-w-0">
-              <div className="flex items-center gap-1 relative flex-shrink-0" ref={dropdownRef}>
-              <button
-                onClick={() => setShowModelDropdown(!showModelDropdown)}
-                className={`flex items-center space-x-1 hover:bg-slate-100 px-2 py-1 rounded-full transition-all text-slate-700 text-[10px] font-bold uppercase tracking-wider bg-slate-50 border ${showModelDropdown ? "border-blue-300 ring-2 ring-blue-50" : "border-slate-100"}`}
-                title="Select Model"
-              >
-                <span className="capitalize">
-                  {provider === "adesso" ? ADESSO_MODELS.find(m => m.id === adessoModel)?.label || "adesso" : provider}
-                </span>
-                {showModelDropdown ? <ChevronUp className="w-3 h-3 text-blue-500" strokeWidth={2.5} /> : <ChevronDown className="w-3 h-3 text-slate-400" strokeWidth={2.5} />}
-              </button>
+          {/* Input Tools & Submit — two-row layout */}
+          <div className="flex flex-col gap-1 mt-2 px-1">
 
-              {showModelDropdown && (
-                <div className="absolute bottom-full mb-2 left-0 w-56 bg-white border border-slate-200 rounded-2xl shadow-xl p-1.5 z-50 animate-in slide-in-from-bottom-2 duration-200">
-                  <div className="px-3 py-1.5 mb-1">
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Providers</span>
+            {/* Row 1: Model + Attach + Submit */}
+            <div className="flex items-center gap-1">
+              {/* Model selector */}
+              <div className="relative flex-shrink-0" ref={dropdownRef}>
+                <button
+                  onClick={() => setShowModelDropdown(!showModelDropdown)}
+                  className={`flex items-center space-x-1 hover:bg-slate-100 px-2 py-1 rounded-full transition-all text-slate-700 text-[10px] font-bold uppercase tracking-wider bg-slate-50 border max-w-[120px] ${showModelDropdown ? "border-blue-300 ring-2 ring-blue-50" : "border-slate-100"}`}
+                  title="Select Model"
+                >
+                  <span className="capitalize truncate">
+                    {provider === "adesso" ? "adesso" : provider}
+                  </span>
+                  {showModelDropdown ? <ChevronUp className="w-3 h-3 text-blue-500 flex-shrink-0" strokeWidth={2.5} /> : <ChevronDown className="w-3 h-3 text-slate-400 flex-shrink-0" strokeWidth={2.5} />}
+                </button>
+
+                {showModelDropdown && (
+                  <div className="absolute bottom-full mb-2 left-0 w-56 bg-white border border-slate-200 rounded-2xl shadow-xl p-1.5 z-50 animate-in slide-in-from-bottom-2 duration-200">
+                    <div className="px-3 py-1.5 mb-1">
+                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Providers</span>
+                    </div>
+                    {(["openai", "anthropic", "gemini", "adesso"] as const).map((p) => {
+                      const hasProviderKey = !!keys[p];
+                      const isSelected = provider === p;
+                      return (
+                        <button
+                          key={p}
+                          onClick={() => handleProviderSelect(p)}
+                          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all ${
+                            isSelected ? "bg-slate-900 text-white" : "hover:bg-slate-50 text-slate-600"
+                          }`}
+                        >
+                          <span className="capitalize">{p}</span>
+                          {!hasProviderKey && (
+                            <div className="flex items-center justify-center" title={`No API Key set for ${p}. Click to select, then add key in settings.`}>
+                              <Key className="w-3.5 h-3.5 text-red-500" />
+                            </div>
+                          )}
+                          {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />}
+                        </button>
+                      );
+                    })}
+
+                    {provider === "adesso" && (
+                      <>
+                        <div className="h-[1px] bg-slate-100 my-2 mx-2" />
+                        <div className="px-3 py-1.5 mb-1">
+                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">adesso AI Hub Models</span>
+                        </div>
+                        <div className="max-h-[200px] overflow-y-auto custom-scrollbar">
+                          {ADESSO_MODELS.map((m) => {
+                            const isModelSelected = adessoModel === m.id;
+                            return (
+                              <button
+                                key={m.id}
+                                onClick={() => { setAdessoModel(m.id); setShowModelDropdown(false); if (isFreeAdessoModel(m.id)) setShowFreeModelPopup(true); }}
+                                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-[10px] font-bold transition-all ${
+                                  isModelSelected ? "text-blue-600 bg-blue-50/50" : "hover:bg-slate-50 text-slate-600"
+                                }`}
+                              >
+                                <span className="text-left line-clamp-1">{m.label}</span>
+                                {isModelSelected && <CheckCircle2 className="w-3 h-3 text-blue-500" />}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </>
+                    )}
+
+                    <div className="h-[1px] bg-slate-100 my-1 mx-2" />
+                    <button
+                      onClick={() => { onSettings?.(); setShowModelDropdown(false); }}
+                      className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 hover:bg-slate-50 transition-all"
+                    >
+                      <Settings className="w-3 h-3" />
+                      Configure Keys
+                    </button>
                   </div>
-                  {(["openai", "anthropic", "gemini", "adesso"] as const).map((p) => {
-                    const hasProviderKey = !!keys[p];
-                    const isSelected = provider === p;
-                    return (
-                      <button
-                        key={p}
-                        onClick={() => handleProviderSelect(p)}
-                        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all ${
-                          isSelected ? "bg-slate-900 text-white" : "hover:bg-slate-50 text-slate-600"
-                        }`}
-                      >
-                        <span className="capitalize">{p}</span>
-                        {!hasProviderKey && (
-                          <div 
-                            className="flex items-center justify-center" 
-                            title={`No API Key set for ${p}. Click to select, then add key in settings.`}
-                          >
-                            <Key className="w-3.5 h-3.5 text-red-500" />
-                          </div>
-                        )}
-                        {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />}
-                      </button>
-                    );
-                  })}
-                  
-                  {provider === "adesso" && (
-                    <>
-                      <div className="h-[1px] bg-slate-100 my-2 mx-2" />
-                      <div className="px-3 py-1.5 mb-1">
-                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">adesso AI Hub Models</span>
-                      </div>
-                      <div className="max-h-[200px] overflow-y-auto custom-scrollbar">
-                        {ADESSO_MODELS.map((m) => {
-                          const isModelSelected = adessoModel === m.id;
-                          return (
-                            <button
-                              key={m.id}
-                              onClick={() => { setAdessoModel(m.id); setShowModelDropdown(false); if (isFreeAdessoModel(m.id)) setShowFreeModelPopup(true); }}
-                              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-[10px] font-bold transition-all ${
-                                isModelSelected ? "text-blue-600 bg-blue-50/50" : "hover:bg-slate-50 text-slate-600"
-                              }`}
-                            >
-                              <span className="text-left line-clamp-1">{m.label}</span>
-                              {isModelSelected && <CheckCircle2 className="w-3 h-3 text-blue-500" />}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </>
-                  )}
-
-                  <div className="h-[1px] bg-slate-100 my-1 mx-2" />
-                  <button
-                    onClick={() => { onSettings?.(); setShowModelDropdown(false); }}
-                    className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 hover:bg-slate-50 transition-all"
-                  >
-                    <Settings className="w-3 h-3" />
-                    Configure Keys
-                  </button>
-                </div>
-              )}
+                )}
+              </div>
 
               <AttachButton disabled={isGenerating || !hasKey} />
 
-              <button
-                onClick={handleTogglePlanMode}
-                title="Plan Mode: AI will ask clarifying questions before generating"
-                className={`relative flex items-center space-x-1 px-2 py-1 rounded-full transition-all text-[10px] font-bold uppercase tracking-wider border ${
-                  planMode
-                    ? "bg-blue-50 border-blue-300 text-blue-700 ring-2 ring-blue-50"
-                    : "hover:bg-slate-100 bg-slate-50 border-slate-100 text-slate-700"
-                }`}
-              >
-                {planMode ? (
-                  <Sparkles className="w-3 h-3" strokeWidth={2.5} />
-                ) : (
-                  <SlidersHorizontal className="w-3 h-3" strokeWidth={2.5} />
-                )}
-                <span>Plan</span>
-                {planPhase !== "idle" && (
-                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                )}
-              </button>
-            </div>
+              {/* Spacer */}
+              <div className="flex-1" />
 
-              {/* Corporate / Private mode toggle */}
-              <div className="flex-shrink-0">
-              <button
-                onClick={() => setPresentationMode(presentationMode === "corporate" ? "private" : "corporate")}
-                title="Corporate: formal, data-driven | Private: casual, expressive"
-                className={`flex items-center space-x-1 px-2 py-1 rounded-full transition-all text-[10px] font-bold uppercase tracking-wider border ${
-                  presentationMode === "private"
-                    ? "bg-purple-50 border-purple-300 text-purple-700"
-                    : "hover:bg-slate-100 bg-slate-50 border-slate-100 text-slate-700"
-                }`}
-              >
-                {presentationMode === "private" ? (
-                  <Smile className="w-3 h-3" strokeWidth={2.5} />
-                ) : (
-                  <Briefcase className="w-3 h-3" strokeWidth={2.5} />
-                )}
-                <span>{presentationMode === "private" ? "Private" : "Corporate"}</span>
-              </button>
-              {/* Voice Input Button hidden for now */}
-              {/* 
-              <button
-                onClick={toggleMic}
-                title={isRecording ? "Stop Recording" : "Voice Input"}
-                className={`p-2 rounded-full transition-all flex items-center justify-center ${
-                  isRecording 
-                    ? "bg-emerald-500 text-white shadow-lg shadow-emerald-200 animate-pulse" 
-                    : "hover:bg-slate-100 text-slate-400 active:scale-90"
-                }`}
-              >
-                <Mic className="w-5 h-5" strokeWidth={isRecording ? 2.5 : 2} />
-              </button>
-              */}
-            </div>
-            </div>
-
-            {/* Submit Button */}
-            <div className="flex items-center flex-shrink-0">
+              {/* Submit Button */}
               {planMode && planPhase === "answering" ? (
                 <button
                   onClick={handlePairSubmit}
@@ -1203,16 +1227,112 @@ function ChatPaneInner({ onSettings, onInsecure }: ChatPaneProps) {
                   {planCurrentPair < Math.ceil(planQuestions.length / 2) - 1 ? "Next" : "Build Outline"}
                 </button>
               ) : (
-              <button
-                onClick={() => handleSubmit()}
-                disabled={isGenerating || !hasKey || !input.trim()}
-                className="bg-slate-900 hover:bg-blue-600 active:scale-90 disabled:bg-slate-100 text-white p-2 rounded-full transition-all flex items-center justify-center w-8 h-8 shadow-sm disabled:shadow-none"
-                aria-label="Send message"
-              >
-                <ArrowUp className="w-4 h-4 -translate-y-[0.5px]" strokeWidth={3} />
-              </button>
+                <button
+                  onClick={() => handleSubmit()}
+                  disabled={isGenerating || !hasKey || !input.trim()}
+                  className="bg-slate-900 hover:bg-blue-600 active:scale-90 disabled:bg-slate-100 text-white p-2 rounded-full transition-all flex items-center justify-center w-8 h-8 shadow-sm disabled:shadow-none flex-shrink-0"
+                  aria-label="Send message"
+                >
+                  <ArrowUp className="w-4 h-4 -translate-y-[0.5px]" strokeWidth={3} />
+                </button>
               )}
             </div>
+
+            {/* Row 2: Plan + Style + Brief + Corporate/Private */}
+            <div className="flex items-center gap-1">
+              {/* Plan mode */}
+              <button
+                onClick={handleTogglePlanMode}
+                title="Plan Mode: AI will ask clarifying questions before generating"
+                className={`relative flex items-center space-x-1 px-2 py-1 rounded-full transition-all text-[10px] font-bold uppercase tracking-wider border flex-shrink-0 ${
+                  planMode
+                    ? "bg-blue-50 border-blue-300 text-blue-700 ring-2 ring-blue-50"
+                    : "hover:bg-slate-100 bg-slate-50 border-slate-100 text-slate-700"
+                }`}
+              >
+                {planMode ? <Sparkles className="w-3 h-3" strokeWidth={2.5} /> : <SlidersHorizontal className="w-3 h-3" strokeWidth={2.5} />}
+                <span>Plan</span>
+                {planPhase !== "idle" && (
+                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                )}
+              </button>
+
+              {/* Design Persona Picker */}
+              <div className="relative flex-shrink-0" ref={personaPickerRef}>
+                <button
+                  onClick={() => {
+                    if (!showPersonaPicker && personaPickerRef.current) {
+                      const rect = personaPickerRef.current.getBoundingClientRect();
+                      setPersonaPickerPos({ right: window.innerWidth - rect.right, bottom: window.innerHeight - rect.top + 8 });
+                    }
+                    setShowPersonaPicker(!showPersonaPicker);
+                    setShowBriefEditor(false);
+                  }}
+                  title="Design Persona — choose a visual identity for the presentation"
+                  className={`relative flex items-center space-x-1 px-2 py-1 rounded-full transition-all text-[10px] font-bold uppercase tracking-wider border ${
+                    activePersona
+                      ? "bg-violet-50 border-violet-300 text-violet-700 ring-2 ring-violet-50"
+                      : "hover:bg-slate-100 bg-slate-50 border-slate-100 text-slate-700"
+                  }`}
+                >
+                  <Palette className="w-3 h-3" strokeWidth={2.5} />
+                  <span>{activePersona ? (getPersonaById(activePersona)?.label.split(" ")[0] ?? "Style") : "Style"}</span>
+                  {activePersona && (
+                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-violet-500" />
+                  )}
+                </button>
+                {showPersonaPicker && (
+                  <DesignPersonaPicker onClose={() => setShowPersonaPicker(false)} position={personaPickerPos} />
+                )}
+              </div>
+
+              {/* Design Brief Editor */}
+              <div className="relative flex-shrink-0" ref={briefEditorRef}>
+                <button
+                  onClick={() => {
+                    if (!showBriefEditor && briefEditorRef.current) {
+                      const rect = briefEditorRef.current.getBoundingClientRect();
+                      setBriefEditorPos({ right: window.innerWidth - rect.right, bottom: window.innerHeight - rect.top + 8 });
+                    }
+                    setShowBriefEditor(!showBriefEditor);
+                    setShowPersonaPicker(false);
+                  }}
+                  title="Design Brief — write or upload your design.md"
+                  className={`relative flex items-center space-x-1 px-2 py-1 rounded-full transition-all text-[10px] font-bold uppercase tracking-wider border ${
+                    designBrief && designBrief.trim()
+                      ? "bg-emerald-50 border-emerald-300 text-emerald-700 ring-2 ring-emerald-50"
+                      : "hover:bg-slate-100 bg-slate-50 border-slate-100 text-slate-700"
+                  }`}
+                >
+                  <FileText className="w-3 h-3" strokeWidth={2.5} />
+                  <span>Brief</span>
+                  {designBrief && designBrief.trim() && (
+                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500" />
+                  )}
+                </button>
+                {showBriefEditor && (
+                  <DesignBriefEditor onClose={() => setShowBriefEditor(false)} position={briefEditorPos} />
+                )}
+              </div>
+
+              {/* Spacer */}
+              <div className="flex-1" />
+
+              {/* Corporate / Private mode toggle */}
+              <button
+                onClick={() => setPresentationMode(presentationMode === "corporate" ? "private" : "corporate")}
+                title="Corporate: formal, data-driven | Private: casual, expressive"
+                className={`flex items-center space-x-1 px-2 py-1 rounded-full transition-all text-[10px] font-bold uppercase tracking-wider border flex-shrink-0 ${
+                  presentationMode === "private"
+                    ? "bg-purple-50 border-purple-300 text-purple-700"
+                    : "hover:bg-slate-100 bg-slate-50 border-slate-100 text-slate-700"
+                }`}
+              >
+                {presentationMode === "private" ? <Smile className="w-3 h-3" strokeWidth={2.5} /> : <Briefcase className="w-3 h-3" strokeWidth={2.5} />}
+                <span>{presentationMode === "private" ? "Private" : "Corporate"}</span>
+              </button>
+            </div>
+
           </div>
         </div>
         </FileDropZone>

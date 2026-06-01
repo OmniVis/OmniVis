@@ -71,7 +71,7 @@ const WELCOME_TEMPLATE_CODE = `export default function Presentation() {
               seamlessly.
             </h1>
             <p className="text-sl-sub text-xl max-w-3xl leading-relaxed sl-slide-up sl-delay-2">
-              Ready to present? Tap the Share button to copy a persistent link, start a synchronized remote Speaker console with notes and timers, or launch a live WebSocket collaboration session.
+              Ready to present? Tap the Share button to copy a persistent link or start a synchronized remote Speaker console with notes and timers.
             </p>
           </div>
         )}
@@ -121,7 +121,7 @@ const TOUR_STEPS: TourStep[] = [
   {
     selector: '[data-tour="share-button"]',
     title: "Share & Present to the World",
-    description: "Click Share to generate a secure, persistent sharing link, launch a synchronized remote Speaker console with notes and timers, or start a WebSocket-powered live collaboration session.",
+    description: "Click Share to generate a secure, persistent sharing link or launch a synchronized remote Speaker console with notes and timers.",
     tip: "You have completed the onboarding! Enjoy creating extraordinary presentations.",
   },
 ];

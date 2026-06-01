@@ -34,7 +34,7 @@ export default function PresenterClient({ channelId, initialSlide = 0, serverNot
 
   // In editor mode the store is seeded from localStorage (same origin as the
   // editor window), so generatedCode is available without any extra sync.
-  const { notes: localNotes, setNote, generatedCode, theme, branding } = useSlidiStore();
+  const { notes: localNotes, setNote, generatedCode, theme, branding, engineVersion } = useSlidiStore();
   
   // Use server code (shared mode) or the editor's current code (editor mode)
   const previewCode = serverCode || generatedCode;
@@ -44,10 +44,10 @@ export default function PresenterClient({ channelId, initialSlide = 0, serverNot
   const notes = serverCode ? (serverNotes ?? {}) : localNotes;
   const currentNote = notes[currentSlide] ?? "";
 
-  // Build srcdoc once — uses current theme/branding
+  // Build srcdoc once — uses current theme/branding/engineVersion
   const previewSrcdoc = useMemo(
-    () => (previewCode ? buildSrcdoc(previewCode, theme, branding) : ""),
-    [previewCode, theme, branding]
+    () => (previewCode ? buildSrcdoc(previewCode, theme, branding, false, engineVersion) : ""),
+    [previewCode, theme, branding, engineVersion]
   );
 
   // Scaling logic for the mini preview

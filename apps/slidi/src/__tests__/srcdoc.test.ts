@@ -65,7 +65,13 @@ describe("buildSrcdoc animation palette", () => {
   it("includes inspect mode script listening for sl-inspect-mode messages", () => {
     const html = buildSrcdoc("", "minimal", null);
     expect(html).toContain("sl-inspect-mode");
-    expect(html).toContain("sl-commit-visual-edit");
+    expect(html).toContain("sl-element-select");
+    expect(html).toContain("material-symbols-rounded");
+  });
+
+  it("does not include inspector script in export mode", () => {
+    const html = buildSrcdoc("", "minimal", null, true);
+    expect(html).not.toContain("sl-element-select");
   });
 
   it("includes fullscreen exit button with sl-fs-exit id", () => {

@@ -49,7 +49,7 @@ describe("generatePresentation multi-step flow", () => {
           choices: [{
             message: {
               content: `export default function Presentation() {
-  const totalSlides = 8;
+  const totalSlides = 14;
   return <div>{totalSlides}</div>;
 }`,
             },
@@ -70,9 +70,9 @@ describe("generatePresentation multi-step flow", () => {
     );
 
     expect(fetchMock).toHaveBeenCalledTimes(3);
-    expect(result.code).toContain("const totalSlides = 8;");
+    expect(result.code).toContain("const totalSlides = 14;");
     expect(result.isComplete).toBe(true);
-    expect(result.expectedCount).toBe(8);
+    expect(result.expectedCount).toBe(14);
     expect(stages).toEqual(["planning", "generating", "finalizing"]);
   });
 });

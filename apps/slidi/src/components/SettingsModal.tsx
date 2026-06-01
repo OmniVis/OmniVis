@@ -3,14 +3,14 @@
 import { useState } from "react";
 import { useSlidiStore, Provider } from "@/store/slidiStore";
 import type { UserContext } from "@/store/slidiStore";
-import { Key, X, Info, Eye, EyeOff, ExternalLink, Settings, ShieldCheck, Trash2, Box, Upload, Palette, Globe, CheckCircle2, User } from "lucide-react";
+import { Key, X, Info, Eye, EyeOff, ExternalLink, Settings, ShieldCheck, Trash2, Box, Upload, Globe, CheckCircle2, User } from "lucide-react";
 import { ADESSO_MODELS, isFreeAdessoModel } from "@/lib/ai";
 
 interface SettingsModalProps {
   onClose: () => void;
 }
 
-type SettingsTab = "api" | "general" | "profile" | "about";
+type SettingsTab = "api" | "general" | "engine" | "profile" | "about";
 
 const PROVIDERS: {
   id: Provider;
@@ -47,7 +47,24 @@ const PROVIDERS: {
 
 
 export default function SettingsModal({ onClose }: SettingsModalProps) {
-  const { keys, provider, setApiKey, clearApiKey, adessoModel, setAdessoModel, clearMessages, userContext, setUserContext } = useSlidiStore();
+  const { keys, provider, setApiKey, clearApiKey, adessoModel, setAdessoModel, clearMessages, userContext, setUserContext, engineVersion, setEngineVersion } = useSlidiStore();
+
+  const EngineIcon = (props: any) => (
+    <svg
+      {...props}
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect width="18" height="18" x="3" y="3" rx="2" />
+      <path d="M3 9h18" />
+      <path d="M9 21V9" />
+    </svg>
+  );
 
   const [activeTab, setActiveTab] = useState<SettingsTab>("api");
   const validProvider = PROVIDERS.some((p) => p.id === provider) ? provider : "openai";
@@ -153,6 +170,7 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
             <nav className="flex flex-row md:flex-col md:space-y-1.5 flex-1 p-2 md:p-0 gap-1 md:gap-0">
               <TabButton id="api" label="API Keys" icon={Key} />
               <TabButton id="general" label="General" icon={Settings} />
+              <TabButton id="engine" label="Engine" icon={EngineIcon} />
               <button
                 onClick={() => setActiveTab("profile")}
                 className={`flex-1 md:flex-none md:w-full flex items-center justify-center md:justify-start gap-2 md:gap-3 px-2 md:px-4 py-2 md:py-2.5 text-[11px] font-bold uppercase tracking-wider transition-all active:scale-[0.97] ${activeTab === "profile"
@@ -280,6 +298,137 @@ export default function SettingsModal({ onClose }: SettingsModalProps) {
               )}
 
 
+
+              {activeTab === "engine" && (
+                <div className="space-y-8 animate-in fade-in duration-150">
+                  
+                  {/* Current Standard Group */}
+                  <div className="space-y-3">
+                    <h3 className="text-[11px] font-black tracking-widest text-slate-400 uppercase ml-1">Current Standard</h3>
+                    <div className="grid grid-cols-1 gap-3">
+                      <button
+                        onClick={() => setEngineVersion("v4")}
+                        className={`text-left p-5 border rounded-2xl transition-all relative overflow-hidden flex items-start gap-4 ${
+                          engineVersion === "v4" 
+                          ? "bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-500/50 shadow-[0_8px_30px_-12px_rgba(59,130,246,0.3)] ring-1 ring-blue-500/20" 
+                          : "bg-white border-slate-200 hover:border-slate-300 hover:shadow-md hover:-translate-y-0.5"
+                        }`}
+                      >
+                        <div className={`mt-0.5 shrink-0 transition-colors ${engineVersion === "v4" ? "text-blue-600" : "text-slate-300"}`}>
+                          <CheckCircle2 className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-3 mb-1.5">
+                            <span className="text-[15px] font-bold text-slate-900 tracking-tight">v4 – Executive & Hyper-Modern</span>
+                            <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-700 text-[10px] font-black uppercase tracking-wider shadow-sm">Recommended</span>
+                          </div>
+                          <p className="text-[12px] text-slate-600 leading-relaxed max-w-xl">
+                            The ultimate engine for high-stakes presentations. Combines top-tier consulting logic (McKinsey/BCG) with ultra-modern Apple-style Bento Grids. The AI enforces strict "one-message-per-slide" clarity, while using 60fps cinematic micro-animations to guide audience focus.
+                          </p>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Alternative Modern Engines */}
+                  <div className="space-y-3">
+                    <h3 className="text-[11px] font-black tracking-widest text-slate-400 uppercase ml-1">Alternative Modes</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <button
+                        onClick={() => setEngineVersion("v3")}
+                        className={`text-left p-4 border rounded-xl transition-all flex items-start gap-3 ${
+                          engineVersion === "v3" 
+                          ? "bg-slate-50 border-slate-400 shadow-sm ring-1 ring-slate-400/20" 
+                          : "bg-white border-slate-200 hover:border-slate-300 hover:shadow-sm hover:-translate-y-0.5"
+                        }`}
+                      >
+                        <div className={`mt-0.5 shrink-0 ${engineVersion === "v3" ? "text-slate-700" : "text-slate-300"}`}>
+                          <CheckCircle2 className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-[13px] font-bold text-slate-900">v3 – Perfect Scale</span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 leading-relaxed">
+                            The "bulletproof" engine. Renders on an absolute 1920x1080 canvas that perfectly scales up or down to fit any screen without ever shifting typography or breaking layouts. Best for complex charts.
+                          </p>
+                        </div>
+                      </button>
+
+                      <button
+                        onClick={() => setEngineVersion("v2")}
+                        className={`text-left p-4 border rounded-xl transition-all flex items-start gap-3 ${
+                          engineVersion === "v2" 
+                          ? "bg-slate-50 border-slate-400 shadow-sm ring-1 ring-slate-400/20" 
+                          : "bg-white border-slate-200 hover:border-slate-300 hover:shadow-sm hover:-translate-y-0.5"
+                        }`}
+                      >
+                        <div className={`mt-0.5 shrink-0 ${engineVersion === "v2" ? "text-slate-700" : "text-slate-300"}`}>
+                          <CheckCircle2 className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-[13px] font-bold text-slate-900">v2 – Fluid Container</span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 leading-relaxed">
+                            The highly dynamic, fluid layout engine. Features aggressive 3D mouse parallax and playful spring physics. Content flows natively to fill available space.
+                          </p>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Legacy Support */}
+                  <div className="space-y-3 pt-4 border-t border-slate-100">
+                    <h3 className="text-[11px] font-black tracking-widest text-slate-300 uppercase ml-1">Legacy Support</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 opacity-70 hover:opacity-100 transition-opacity duration-300">
+                      <button
+                        onClick={() => setEngineVersion("v1")}
+                        className={`text-left p-3 border rounded-lg transition-all flex items-start gap-3 ${
+                          engineVersion === "v1" 
+                          ? "bg-slate-100 border-slate-300" 
+                          : "bg-white border-slate-100 hover:border-slate-300"
+                        }`}
+                      >
+                        <div className={`mt-0.5 shrink-0 ${engineVersion === "v1" ? "text-slate-500" : "text-slate-200"}`}>
+                          <CheckCircle2 className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <span className="text-[12px] font-bold text-slate-700">v1 – Classic</span>
+                          </div>
+                          <p className="text-[10px] text-slate-400 leading-relaxed">
+                            Clean, lightweight, and fast. Disables heavy 3D rendering and complex animations for maximum battery life and compatibility on older hardware.
+                          </p>
+                        </div>
+                      </button>
+
+                      <button
+                        onClick={() => setEngineVersion("v0")}
+                        className={`text-left p-3 border rounded-lg transition-all flex items-start gap-3 ${
+                          engineVersion === "v0" 
+                          ? "bg-slate-100 border-slate-300" 
+                          : "bg-white border-slate-100 hover:border-slate-300"
+                        }`}
+                      >
+                        <div className={`mt-0.5 shrink-0 ${engineVersion === "v0" ? "text-slate-500" : "text-slate-200"}`}>
+                          <CheckCircle2 className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <span className="text-[12px] font-bold text-slate-700">v0 – Legacy</span>
+                            <span className="px-1.5 py-0.5 rounded-sm bg-slate-100 text-slate-400 text-[8px] font-black uppercase tracking-wider">Older</span>
+                          </div>
+                          <p className="text-[10px] text-slate-400 leading-relaxed">
+                            The original May 2026 engine. Highly rigid HTML/CSS structures. Retained exclusively to ensure exact backwards compatibility with older saved decks.
+                          </p>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+
+                </div>
+              )}
 
               {activeTab === "general" && (
                 <div className="space-y-8 animate-in fade-in duration-150">

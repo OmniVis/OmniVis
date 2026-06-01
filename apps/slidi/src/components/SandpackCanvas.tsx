@@ -23,8 +23,32 @@ const ENTRY_FILE = "/App.js";
 let _lastAIPushedCode = "";
 
 /**
+ * Patterns that could be used to exfiltrate data or escape the sandbox.
+ * The iframe already has sandbox="allow-scripts" (no allow-same-origin) so
+ * postMessage + parent.location are the main cross-origin vectors worth blocking.
+ */
+const DANGEROUS_PATTERNS: RegExp[] = [
+  /window\s*\.\s*(parent|top|opener)\s*\.\s*location/,
+  /document\s*\.\s*location/,
+  /\bfetch\s*\(/,
+  /new\s+XMLHttpRequest/,
+  /new\s+WebSocket\s*\(/,
+  /navigator\s*\.\s*sendBeacon/,
+  /import\s*\(/,           // dynamic import
+  /\brequire\s*\(/,        // CommonJS
+  /<script[\s>]/i,         // raw <script> tags (JSX safety)
+  /javascript\s*:/i,       // javascript: URIs
+  /data\s*:\s*text\/html/i, // data URIs that embed HTML
+];
+
+function containsDangerousCode(code: string): boolean {
+  return DANGEROUS_PATTERNS.some((re) => re.test(code));
+}
+
+/**
  * Syncs user edits in the Sandpack code editor back into the Zustand store.
  * Skips pushing when the content matches the last AI-generated code.
+ * Blocks pushes that contain patterns capable of data exfiltration.
  */
 function CodeSyncBack() {
   const { sandpack } = useSandpack();
@@ -32,7 +56,7 @@ function CodeSyncBack() {
 
   useEffect(() => {
     const code = sandpack.files[ENTRY_FILE]?.code ?? "";
-    if (code && code !== _lastAIPushedCode) {
+    if (code && code !== _lastAIPushedCode && !containsDangerousCode(code)) {
       const timer = setTimeout(() => pushVersion(code), 300);
       return () => clearTimeout(timer);
     }
@@ -59,28 +83,11 @@ export default function SandpackCanvas({ activeView }: SandpackCanvasProps) {
         inspectMode={inspectMode}
         branding={branding}
         syncChannel={currentVersionId || "slidi-editor"}
-        onCommitEdit={(tagName, oldText, newText) => {
-          const currentCode = useSlidiStore.getState().generatedCode;
-          
-          // Attempt a robust replacement
-          let updatedCode = currentCode;
-          const escapedOld = oldText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-          const jsxPattern = new RegExp(`>\\s*${escapedOld}\\s*<`, 'g');
-          const attrPattern = new RegExp(`(["'])${escapedOld}(["'])`, 'g');
-
-          if (jsxPattern.test(currentCode)) {
-            updatedCode = currentCode.replace(jsxPattern, `>${newText}<`);
-          } else if (attrPattern.test(currentCode)) {
-            updatedCode = currentCode.replace(attrPattern, `$1${newText}$2`);
-          } else {
-            updatedCode = currentCode.replace(oldText, newText);
-          }
-
-          if (updatedCode !== currentCode) {
-            useSlidiStore.getState().pushVersion(updatedCode);
-          }
-          
-          useSlidiStore.getState().setInspectMode(false);
+        onElementSelect={(payload) => {
+          useSlidiStore.getState().setSelectedElement(payload);
+        }}
+        onElementDeselect={() => {
+          useSlidiStore.getState().setSelectedElement(null);
         }}
       />
     );

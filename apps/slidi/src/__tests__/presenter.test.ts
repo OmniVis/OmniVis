@@ -1,16 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { buildPrompt } from "@/lib/prompt";
-import { THEMES } from "@/lib/themes";
+import { RENDERER_CODE } from "@/lib/presentationRenderer";
 
-describe("presenter mode — prompt postMessage injection", () => {
-  it("includes sl_slide_change postMessage in generated skeleton", () => {
-    const prompt = buildPrompt(THEMES.minimal.systemPromptBlock);
-    expect(prompt).toContain("sl_slide_change");
-    expect(prompt).toContain("window.parent?.postMessage");
+describe("presenter mode — postMessage injection", () => {
+  it("includes sl_slide_change postMessage in renderer code", () => {
+    expect(RENDERER_CODE).toContain("sl_slide_change");
+    expect(RENDERER_CODE).toContain("window.parent?.postMessage");
   });
 
   it("includes total slides in postMessage payload", () => {
-    const prompt = buildPrompt(THEMES.minimal.systemPromptBlock);
-    expect(prompt).toContain("totalSlides");
+    expect(RENDERER_CODE).toContain("totalSlides");
   });
 });
