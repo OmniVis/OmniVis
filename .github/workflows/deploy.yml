@@ -39,7 +39,7 @@ jobs:
       - name: Build Graphi
         env:
           BASE_PATH: /OmniVis/graphi
-          PUBLIC_API_BASE: ${{ vars.API_BASE_URL }}
+          PUBLIC_API_BASE: https://omnivis-api.thatzane.workers.dev
           HUSKY: "0"
         run: |
           cd apps/graphi
