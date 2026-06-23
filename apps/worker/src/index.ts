@@ -5,6 +5,8 @@ import { presentationsRoute } from './routes/presentations';
 import { diagramsRoute } from './routes/diagrams';
 import { aiRoute } from './routes/ai';
 import { usersRoute } from './routes/users';
+import { graphiUserRoute } from './routes/graphiUser';
+import { graphiGraphsRoute } from './routes/graphiGraphs';
 import type { Env } from './types';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -18,6 +20,8 @@ app.route('/api/users', usersRoute);
 app.route('/api/presentations', presentationsRoute);
 app.route('/api/diagrams', diagramsRoute);
 app.route('/api/ai', aiRoute);
+app.route('/api/user', graphiUserRoute);
+app.route('/api/graphs', graphiGraphsRoute);
 
 // ─── Root ─────────────────────────────────────────────────────────────────────
 app.get('/', (c) =>

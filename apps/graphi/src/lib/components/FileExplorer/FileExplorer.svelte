@@ -2,6 +2,8 @@
   import { onMount } from 'svelte';
   import { get } from 'svelte/store';
   import { base } from '$app/paths';
+  import { PUBLIC_API_BASE } from '$env/static/public';
+  const apiBase = PUBLIC_API_BASE || (base || '');
   import {
     activeFileHandle,
     activeVirtualFileId,
@@ -83,7 +85,7 @@
     if (!userId) return;
     cloudLoading = true;
     try {
-      const res = await fetch(`${base || ''}/api/graphs?user_id=${userId}`);
+      const res = await fetch(`${apiBase}/api/graphs?user_id=${userId}`);
       cloudEntries = await res.json();
     } catch (err) {
       console.error('Failed to fetch cloud graphs:', err);
@@ -101,7 +103,7 @@
     try {
       saveStatus.set('saving');
       const packed = packFileContent($stateStore.code, $stateStore.mermaid);
-      const res = await fetch(`${base || ''}/api/graphs/${id}`, {
+      const res = await fetch(`${apiBase}/api/graphs/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code: packed, name, user_id: userId })
@@ -148,7 +150,7 @@
 
   async function handleLoadCloudFile(id: string) {
     try {
-      const res = await fetch(`${base || ''}/api/graphs/${id}`);
+      const res = await fetch(`${apiBase}/api/graphs/${id}`);
       const data = await res.json();
       if (data.code_content) {
         const { code, config } = unpackFileContent(data.code_content);
@@ -336,7 +338,7 @@
                         return;
                       }
                       try {
-                        const res = await fetch(`${base || ''}/api/graphs`, {
+                        const res = await fetch(`${apiBase}/api/graphs`, {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify({
@@ -451,7 +453,7 @@
                       onclick={async () => {
                         try {
                           toast.info('Fetching file...');
-                          const res = await fetch(`${base || ''}/api/graphs/${entry.id}`);
+                          const res = await fetch(`${apiBase}/api/graphs/${entry.id}`);
                           if (!res.ok) throw new Error('Failed to fetch');
                           const data = await res.json();
                           const blob = new Blob([data.code_content], {
@@ -618,7 +620,7 @@
                     return;
                   }
                   try {
-                    const res = await fetch(`${base || ''}/api/graphs`, {
+                    const res = await fetch(`${apiBase}/api/graphs`, {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({

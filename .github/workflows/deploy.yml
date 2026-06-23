@@ -39,11 +39,15 @@ jobs:
       - name: Build Graphi
         env:
           BASE_PATH: /OmniVis/graphi
+          PUBLIC_API_BASE: ${{ vars.API_BASE_URL }}
           HUSKY: "0"
         run: |
           cd apps/graphi
           pnpm install --ignore-scripts --no-frozen-lockfile
           pnpm exec svelte-kit sync
+          # Remove server-side routes incompatible with static export:
+          # api/* → handled by Cloudflare Worker (PUBLIC_API_BASE)
+          rm -rf src/routes/api
           pnpm run build
           mkdir -p ../../dist/graphi
           cp -r build/. ../../dist/graphi/

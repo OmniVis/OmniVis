@@ -1,6 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { base } from '$app/paths';
+  import { PUBLIC_API_BASE } from '$env/static/public';
+  const apiBase = PUBLIC_API_BASE || (base || '');
 
   // Props using Svelte 5 runes
   interface Props {
@@ -69,7 +71,7 @@
     isWorking = true;
     workError = '';
     try {
-      const res = await fetch(`${base || ''}/api/user`, {
+      const res = await fetch(`${apiBase}/api/user`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id: provisionalKey, username: username.trim() })

@@ -1,5 +1,7 @@
 <script lang="ts">
   import { base } from '$app/paths';
+  import { PUBLIC_API_BASE } from '$env/static/public';
+  const apiBase = PUBLIC_API_BASE || (base || '');
   import { get } from 'svelte/store';
   import { toast } from 'svelte-sonner';
   import CloudIcon from '~icons/material-symbols/cloud';
@@ -77,7 +79,7 @@
     const packed = packFileContent(code, mermaid);
     saveStatus.set('saving');
     try {
-      const res = await fetch(`${base || ''}/api/graphs`, {
+      const res = await fetch(`${apiBase}/api/graphs`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code: packed, name, user_id: userId })
