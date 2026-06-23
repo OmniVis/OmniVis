@@ -15,14 +15,24 @@
   let error = $state('');
 
   onMount(async () => {
+    const id = `preview-${Math.random().toString(36).slice(2, 11)}`;
     try {
-      const id = `preview-${Math.random().toString(36).slice(2, 11)}`;
-      const result = await render(config, code, id);
-      svg = result.svg;
+      // suppressErrorRendering prevents Mermaid v11 from injecting the bomb error SVG into document.body
+      const result = await render({ ...config, suppressErrorRendering: true }, code, id);
+      // Mermaid v11 returns an error SVG (not throws) for syntax errors.
+      // Detect it by checking for the error marker text and show placeholder instead.
+      if (result.svg.includes('Syntax error') || result.svg.includes('mermaid version')) {
+        error = 'Preview unavailable';
+      } else {
+        svg = result.svg;
+      }
     } catch (err) {
       console.error('Failed to render preview:', err);
-      error = 'Failed to render preview';
+      error = 'Preview unavailable';
     } finally {
+      // Clean up any orphaned Mermaid DOM elements left in document.body
+      document.getElementById('d' + id)?.remove();
+      document.querySelectorAll('#d-error, [id^="mermaid-error"]').forEach((el) => el.remove());
       loading = false;
     }
   });

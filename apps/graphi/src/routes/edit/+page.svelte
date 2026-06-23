@@ -14,9 +14,12 @@
   import SecurityPane from '$/components/Layout/SecurityPane.svelte';
   import TemplatePane from '$/components/Layout/TemplatePane.svelte';
   import View from '$/components/View.svelte';
+  import VisualEditor from '$/components/VisualEditor/VisualEditor.svelte';
+  import DragStrip from '$/components/IconPicker/DragStrip.svelte';
   import * as Resizable from '$/components/ui/resizable';
   import type { Tab } from '$/types';
-  import { loadRoots, restoreActiveGraph, saveFile } from '$lib/util/fileSystem';
+  import { loadRoots, restoreActiveGraph } from '$lib/util/fileSystem';
+  import SaveDestinationPicker from '$/components/SaveDestinationPicker.svelte';
   import { packFileContent } from '$/util/fileContent';
   import { PanZoomState } from '$/util/panZoom';
 
@@ -25,7 +28,6 @@
   import { initHandler } from '$/util/util';
   import { siteFiles } from '$lib/util/siteWorkspace.svelte';
   import { onMount } from 'svelte';
-  import { toast } from 'svelte-sonner';
   import CodeIcon from '~icons/custom/code';
   import SaveIcon from '~icons/material-symbols/save';
   import GearIcon from '~icons/material-symbols/settings';
@@ -92,9 +94,31 @@
   let showAISidebar = $state(false);
   let isShortcutsOpen = $state(false);
 
-  let isAdvancedMode = $derived($stateStore.isAdvancedMode);
-  const toggleMode = (pressed: boolean) => {
-    updateCodeStore({ isAdvancedMode: pressed });
+  let isAdvancedMode = $derived(
+    ($stateStore.isAdvancedMode ?? false) && !($stateStore.visualMode ?? false)
+  );
+  let visualMode = $derived($stateStore.visualMode ?? false);
+  let showSavePicker = $state(false);
+  let savedLabel = $state<string | null>(null);
+
+  $effect(() => {
+    if ($saveStatus !== 'success') return;
+    if ($activeCloudFileId) savedLabel = 'Saved to Cloud';
+    else if ($activeVirtualFileId) savedLabel = 'Saved to Browser';
+    else if ($activeFileHandle) savedLabel = 'Saved to Disk';
+    else savedLabel = 'Saved';
+
+    const t = setTimeout(() => {
+      savedLabel = null;
+    }, 15000);
+    return () => clearTimeout(t);
+  });
+
+  const toggleMode = (mode: 'simple' | 'advanced' | 'visual') => {
+    updateCodeStore({
+      isAdvancedMode: mode === 'advanced',
+      visualMode: mode === 'visual'
+    });
   };
 
   let userId = $state<string | null>(null);
@@ -104,15 +128,10 @@
     const packed = packFileContent($stateStore.code, $stateStore.mermaid);
     const saved = await saveActiveFile(packed);
     if (saved) {
-      toast.success('Diagram saved successfully');
-      return;
-    }
-    try {
-      if (await saveFile(packed)) {
-        toast.success('Diagram saved successfully');
-      }
-    } catch {
-      // Error handled in saveFile
+      autosave.cancel();
+      autosaveCloud.cancel();
+    } else {
+      showSavePicker = true;
     }
   }
 
@@ -161,9 +180,20 @@
     }
   }, 15000);
 
+  const autosaveCloud = debounce(async (code: string) => {
+    const cloudId = $activeCloudFileId;
+    if (!cloudId || code === $lastSavedCode) return;
+    const packed = packFileContent(code, $stateStore.mermaid);
+    await saveActiveFile(packed);
+  }, 30000);
+
   $effect(() => {
     if ((!!$activeFileHandle || !!$activeVirtualFileId) && isDirty) {
+      autosaveCloud.cancel();
       autosave($stateStore.code);
+    } else if (!!$activeCloudFileId && isDirty) {
+      autosave.cancel();
+      autosaveCloud($stateStore.code);
     }
     scheduleAutoSave($stateStore.code, $stateStore.mermaid);
   });
@@ -237,7 +267,12 @@
             {:else if $activeCloudFileId}
               {$currentGraphName || 'Untitled Diagram'}
             {/if}
-            {#if isDirty}<span class="ml-0.5 text-[10px] text-amber-500">●</span>{/if}
+            {#if isDirty}
+              <span class="ml-0.5 text-[10px] text-amber-500">●</span>
+            {:else if savedLabel}
+              <span class="ml-1.5 text-[10px] text-emerald-600 opacity-70 transition-opacity"
+                >· {savedLabel}</span>
+            {/if}
           </span>
         {/if}
         {#if $activeVirtualFileId || $activeFileHandle || $activeCloudFileId}
@@ -274,45 +309,59 @@
           data-tour="mode-toggle"
           class="flex items-center rounded-sm border border-slate-200/60 bg-slate-50 p-0.5">
           <button
-            onclick={() => toggleMode(false)}
-            class="rounded-sm px-3 py-1 text-[10px] font-semibold tracking-wider uppercase transition-all {!isAdvancedMode
+            onclick={() => toggleMode('simple')}
+            class="rounded-sm px-3 py-1 text-[10px] font-semibold tracking-wider uppercase transition-all {!isAdvancedMode &&
+            !visualMode
               ? 'bg-white text-slate-900 shadow-[0_1px_2px_rgba(0,0,0,0.05)]'
               : 'text-slate-500 hover:text-slate-900'}">
             Simple
           </button>
           <button
-            onclick={() => toggleMode(true)}
-            class="rounded-sm px-3 py-1 text-[10px] font-semibold tracking-wider uppercase transition-all {isAdvancedMode
+            onclick={() => toggleMode('advanced')}
+            class="rounded-sm px-3 py-1 text-[10px] font-semibold tracking-wider uppercase transition-all {isAdvancedMode &&
+            !visualMode
               ? 'bg-white text-slate-900 shadow-[0_1px_2px_rgba(0,0,0,0.05)]'
               : 'text-slate-500 hover:text-slate-900'}">
             Advanced
+          </button>
+          <button
+            onclick={() => toggleMode('visual')}
+            class="rounded-sm px-3 py-1 text-[10px] font-semibold tracking-wider uppercase transition-all {visualMode
+              ? 'bg-white text-slate-900 shadow-[0_1px_2px_rgba(0,0,0,0.05)]'
+              : 'text-slate-500 hover:text-slate-900'}">
+            Visual
           </button>
         </div>
       </div>
 
       <!-- Right: save + share + account -->
       <div class="flex shrink-0 items-center gap-0.5">
-        <!-- Save button with status-aware styling -->
-        <button
-          onclick={handleSaveDiagram}
-          data-tour="save-button"
-          disabled={$saveStatus === 'saving'}
-          title="Save"
-          class="flex items-center gap-1.5 border px-2.5 py-1 text-xs font-semibold tracking-wider uppercase transition-all active:scale-[0.97] disabled:cursor-wait {$saveStatus ===
-          'success'
-            ? 'border-emerald-300 bg-emerald-50 text-emerald-600'
-            : isDirty
-              ? 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100'
-              : 'border-slate-200 text-slate-700 hover:bg-slate-50'}">
-          {#if $saveStatus === 'saving'}
-            <SaveIcon class="size-3.5 animate-pulse" />
-          {:else if $saveStatus === 'success'}
-            <CheckIcon class="size-3.5" />
-          {:else}
-            <SaveIcon class="size-3.5" />
+        <!-- Save button with destination picker -->
+        <div class="relative">
+          <button
+            onclick={handleSaveDiagram}
+            data-tour="save-button"
+            disabled={$saveStatus === 'saving'}
+            title="Save (Ctrl+S)"
+            class="flex items-center gap-1.5 border px-2.5 py-1 text-xs font-semibold tracking-wider uppercase transition-all active:scale-[0.97] disabled:cursor-wait {$saveStatus ===
+            'success'
+              ? 'border-emerald-300 bg-emerald-50 text-emerald-600'
+              : isDirty
+                ? 'border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100'
+                : 'border-slate-200 text-slate-700 hover:bg-slate-50'}">
+            {#if $saveStatus === 'saving'}
+              <SaveIcon class="size-3.5 animate-pulse" />
+            {:else if $saveStatus === 'success'}
+              <CheckIcon class="size-3.5" />
+            {:else}
+              <SaveIcon class="size-3.5" />
+            {/if}
+            <span class="hidden sm:inline">{$saveStatus === 'success' ? 'Saved' : 'Save'}</span>
+          </button>
+          {#if showSavePicker}
+            <SaveDestinationPicker onClose={() => (showSavePicker = false)} />
           {/if}
-          <span class="hidden sm:inline">{$saveStatus === 'success' ? 'Saved' : 'Save'}</span>
-        </button>
+        </div>
 
         <!-- Share -->
         <div data-tour="share-button" class="flex items-center">
@@ -450,119 +499,131 @@
           }} />
       {/if}
 
-      <Resizable.PaneGroup direction="horizontal" class="flex-1 overflow-hidden">
-        <!-- Sidebar only in Advanced Mode + Active View -->
-        {#if isAdvancedMode && activeSideBarView}
-          <Resizable.Pane order={1} defaultSize={20} minSize={15} maxSize={40} collapsible={false}>
-            <SideBar
-              title={activeSideBarView === 'explorer'
-                ? 'Explorer'
-                : activeSideBarView === 'export'
-                  ? 'Export'
-                  : activeSideBarView === 'history'
-                    ? 'History'
-                    : activeSideBarView === 'themes'
-                      ? 'Theme Store'
-                      : activeSideBarView === 'templates'
-                        ? 'Templates'
-                        : activeSideBarView === 'security'
-                          ? 'Security'
-                          : 'Settings'}>
-              {#if activeSideBarView === 'explorer' && !isMobile}
-                <div class="h-full p-2">
-                  <FileExplorer {isMobile} />
-                </div>
-              {:else if activeSideBarView === 'export'}
-                <ExportPane />
-              {:else if activeSideBarView === 'history'}
-                <div class="h-full overflow-y-auto">
-                  <HistoryTimeline
-                    onRestore={(code, mermaid) => {
-                      const update: Record<string, string> = { code };
-                      if (mermaid) update.mermaid = mermaid;
-                      updateCodeStore(update);
-                    }} />
-                </div>
-              {:else if activeSideBarView === 'themes'}
-                <ThemeStore />
-              {:else if activeSideBarView === 'templates'}
-                <div class="h-full overflow-y-auto">
-                  <TemplatePane />
-                </div>
-              {:else if activeSideBarView === 'settings'}
-                <Settings />
-              {:else if activeSideBarView === 'security'}
-                <SecurityPane />
-              {/if}
-            </SideBar>
-          </Resizable.Pane>
-          <Resizable.Handle
-            withHandle
-            class="w-1.5 bg-border/50 transition-colors hover:bg-primary/50" />
-        {/if}
-
-        <Resizable.Pane order={2} defaultSize={80}>
-          <div class="flex h-full flex-col overflow-hidden">
-            <!-- Removed old header, now unified at top -->
-            <!-- Editor & Preview + fixed AI sidebar -->
-            <div class="flex h-full w-full flex-1 overflow-hidden">
-              <Resizable.PaneGroup
-                direction="horizontal"
-                class="h-full flex-1"
-                autoSaveId="graphi-editor-panes">
-                <Resizable.Pane
-                  order={1}
-                  defaultSize={50}
-                  minSize={20}
-                  class="flex h-full flex-col border-r border-border bg-background">
-                  <Card
-                    onselect={tabSelectHandler}
-                    isOpen
-                    flat
-                    tabs={isAdvancedMode ? editorTabs : [editorTabs[0]]}
-                    activeTabID={$stateStore.editorMode}
-                    isClosable={false}
-                    class="flex h-full w-full flex-col rounded-none border-0 bg-transparent">
-                    {#snippet actions()}{/snippet}
-                    <div data-tour="editor-pane" class="relative flex-1 overflow-hidden">
-                      <Editor {isMobile} />
-                    </div>
-                  </Card>
-                </Resizable.Pane>
-
-                <Resizable.Handle
-                  withHandle
-                  class="w-1.5 bg-border/50 transition-colors hover:bg-primary/50" />
-
-                <!-- Preview Area -->
-                <Resizable.Pane
-                  order={2}
-                  defaultSize={50}
-                  minSize={20}
-                  class="relative flex h-full flex-col overflow-hidden bg-background"
-                  data-tour="preview-pane">
-                  <View {panZoomState} shouldShowGrid={$stateStore.grid} />
-                  <div class="absolute right-4 bottom-4 z-20 flex flex-col gap-2">
-                    <PanZoomToolbar {panZoomState} />
+      {#if visualMode}
+        <div class="flex-1 overflow-hidden">
+          <VisualEditor {panZoomState} />
+        </div>
+      {:else}
+        <Resizable.PaneGroup direction="horizontal" class="flex-1 overflow-hidden">
+          <!-- Sidebar only in Advanced Mode + Active View -->
+          {#if isAdvancedMode && activeSideBarView}
+            <Resizable.Pane
+              order={1}
+              defaultSize={20}
+              minSize={15}
+              maxSize={40}
+              collapsible={false}>
+              <SideBar
+                title={activeSideBarView === 'explorer'
+                  ? 'Explorer'
+                  : activeSideBarView === 'export'
+                    ? 'Export'
+                    : activeSideBarView === 'history'
+                      ? 'History'
+                      : activeSideBarView === 'themes'
+                        ? 'Theme Store'
+                        : activeSideBarView === 'templates'
+                          ? 'Templates'
+                          : activeSideBarView === 'security'
+                            ? 'Security'
+                            : 'Settings'}>
+                {#if activeSideBarView === 'explorer' && !isMobile}
+                  <div class="h-full p-2">
+                    <FileExplorer {isMobile} />
                   </div>
-                </Resizable.Pane>
-              </Resizable.PaneGroup>
+                {:else if activeSideBarView === 'export'}
+                  <ExportPane />
+                {:else if activeSideBarView === 'history'}
+                  <div class="h-full overflow-y-auto">
+                    <HistoryTimeline
+                      onRestore={(code, mermaid) => {
+                        const update: Record<string, string> = { code };
+                        if (mermaid) update.mermaid = mermaid;
+                        updateCodeStore(update);
+                      }} />
+                  </div>
+                {:else if activeSideBarView === 'themes'}
+                  <ThemeStore />
+                {:else if activeSideBarView === 'templates'}
+                  <div class="h-full overflow-y-auto">
+                    <TemplatePane />
+                  </div>
+                {:else if activeSideBarView === 'settings'}
+                  <Settings />
+                {:else if activeSideBarView === 'security'}
+                  <SecurityPane />
+                {/if}
+              </SideBar>
+            </Resizable.Pane>
+            <Resizable.Handle
+              withHandle
+              class="w-1.5 bg-border/50 transition-colors hover:bg-primary/50" />
+          {/if}
 
-              <!-- AI Sidebar: fixed width, not resizable -->
-              {#if showAISidebar}
-                <div
-                  class="relative flex h-full w-80 shrink-0 flex-col border-l border-border bg-card">
-                  <AIChatSidebar
-                    currentCode={$stateStore.code}
-                    onInsertCode={(code) => updateCodeStore({ code })}
-                    onReplaceCode={(code) => updateCodeStore({ code })}
-                    onClose={() => (showAISidebar = false)} />
-                </div>
-              {/if}
+          <Resizable.Pane order={2} defaultSize={80}>
+            <div class="flex h-full flex-col overflow-hidden">
+              <!-- Removed old header, now unified at top -->
+              <!-- Editor & Preview + fixed AI sidebar -->
+              <div class="flex h-full w-full flex-1 overflow-hidden">
+                <Resizable.PaneGroup
+                  direction="horizontal"
+                  class="h-full flex-1"
+                  autoSaveId="graphi-editor-panes">
+                  <Resizable.Pane
+                    order={1}
+                    defaultSize={50}
+                    minSize={20}
+                    class="flex h-full flex-col border-r border-border bg-background">
+                    <Card
+                      onselect={tabSelectHandler}
+                      isOpen
+                      flat
+                      tabs={isAdvancedMode ? editorTabs : [editorTabs[0]]}
+                      activeTabID={$stateStore.editorMode}
+                      isClosable={false}
+                      class="flex h-full w-full flex-col rounded-none border-0 bg-transparent">
+                      {#snippet actions()}{/snippet}
+                      <div data-tour="editor-pane" class="relative flex-1 overflow-hidden">
+                        <Editor {isMobile} />
+                      </div>
+                    </Card>
+                  </Resizable.Pane>
+
+                  <Resizable.Handle
+                    withHandle
+                    class="w-1.5 bg-border/50 transition-colors hover:bg-primary/50" />
+
+                  <!-- Preview Area -->
+                  <Resizable.Pane
+                    order={2}
+                    defaultSize={50}
+                    minSize={20}
+                    class="relative flex h-full flex-col overflow-hidden bg-background"
+                    data-tour="preview-pane">
+                    <DragStrip />
+                    <View {panZoomState} shouldShowGrid={$stateStore.grid} />
+                    <div class="absolute right-4 bottom-4 z-20 flex flex-col gap-2">
+                      <PanZoomToolbar {panZoomState} />
+                    </div>
+                  </Resizable.Pane>
+                </Resizable.PaneGroup>
+
+                <!-- AI Sidebar: fixed width, not resizable -->
+                {#if showAISidebar}
+                  <div
+                    class="relative flex h-full w-80 shrink-0 flex-col border-l border-border bg-card">
+                    <AIChatSidebar
+                      currentCode={$stateStore.code}
+                      onInsertCode={(code) => updateCodeStore({ code })}
+                      onReplaceCode={(code) => updateCodeStore({ code })}
+                      onClose={() => (showAISidebar = false)} />
+                  </div>
+                {/if}
+              </div>
             </div>
-          </div>
-        </Resizable.Pane>
-      </Resizable.PaneGroup>
+          </Resizable.Pane>
+        </Resizable.PaneGroup>
+      {/if}
     </div>
   </div>
 

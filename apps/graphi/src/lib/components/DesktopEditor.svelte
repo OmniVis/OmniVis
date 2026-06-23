@@ -11,21 +11,33 @@
   import { debounce } from 'lodash-es';
   import { onMount } from 'svelte';
   import IconPicker from '$/components/IconPicker/IconPicker.svelte';
+  import WrapIcon from '~icons/material-symbols/wrap-text';
 
   const { onUpdate }: EditorProps = $props();
 
   let divElement: HTMLDivElement | undefined = $state();
   let editor: monaco.editor.IStandaloneCodeEditor | undefined;
   let editorOptions = {
+    cursorSmoothCaretAnimation: 'on' as const,
     minimap: {
       enabled: false
     },
     overviewRulerLanes: 0,
     quickSuggestions: false,
+    smoothScrolling: true,
     suggestOnTriggerCharacters: false,
     wordBasedSuggestions: false
   } satisfies monaco.editor.IStandaloneEditorConstructionOptions;
-  let currentText = '';
+  let currentMermaidText = '';
+  let currentJsonText = '';
+  let cursorLine = $state(1);
+  let cursorColumn = $state(1);
+  let wordWrap = $state(false);
+
+  function toggleWordWrap() {
+    wordWrap = !wordWrap;
+    editor?.updateOptions({ wordWrap: wordWrap ? 'on' : 'off' });
+  }
 
   let jsonModel: monaco.editor.ITextModel;
   let mermaidModel: monaco.editor.ITextModel;
@@ -66,40 +78,91 @@
 
     errorDebug();
     editor = monaco.editor.create(divElement, editorOptions);
+
     const onUpdateDebounced = debounce(onUpdate, 300);
 
-    editor.onDidChangeModelContent(({ isFlush }) => {
-      const newText = editor?.getValue();
-      if (!newText || currentText === newText || isFlush) {
-        return;
+    let isFindWidgetOpen = false;
+
+    editor.onKeyDown((e) => {
+      if ((e.ctrlKey || e.metaKey) && e.keyCode === monaco.KeyCode.KeyF) {
+        isFindWidgetOpen = true;
       }
-      currentText = newText;
-      onUpdateDebounced(currentText);
+      if (e.keyCode === monaco.KeyCode.Escape) {
+        isFindWidgetOpen = false;
+      }
     });
 
-    const unsubscribeState = stateStore.subscribe(({ errorMarkers, editorMode, code, mermaid }) => {
-      if (!editor) {
-        return;
+    editor.onDidFocusEditorText(() => {
+      isFindWidgetOpen = false;
+    });
+
+    editor.onDidChangeCursorPosition((e) => {
+      cursorLine = e.position.lineNumber;
+      cursorColumn = e.position.column;
+    });
+
+    editor.addCommand(monaco.KeyMod.Alt | monaco.KeyCode.KeyZ, () => {
+      toggleWordWrap();
+    });
+
+    editor.onDidChangeModelContent(({ isFlush, isUndoing, isRedoing }) => {
+      if (isFlush || isUndoing || isRedoing) return;
+
+      const newText = editor?.getValue();
+      if (newText === undefined || isFindWidgetOpen) return;
+
+      const isMermaid = editor?.getModel()?.id === mermaidModel.id;
+      const currentText = isMermaid ? currentMermaidText : currentJsonText;
+      if (currentText === newText) return;
+
+      if (isMermaid) {
+        currentMermaidText = newText;
+      } else {
+        currentJsonText = newText;
       }
+      onUpdateDebounced(newText);
+    });
 
-      const model = editorMode === 'code' ? mermaidModel : jsonModel;
+    const unsubscribeState = stateStore.subscribe((stateData) => {
+      const { errorMarkers, editorMode, code, mermaid } = stateData;
+      if (!editor) return;
 
-      if (editor.getModel()?.id !== model.id) {
+      const isMermaidMode = editorMode === 'code';
+      const model = isMermaidMode ? mermaidModel : jsonModel;
+      let currentText = isMermaidMode ? currentMermaidText : currentJsonText;
+
+      // Save view state BEFORE any model switch so we capture the outgoing model's state
+      const viewState = editor.saveViewState();
+      const isSwitchingModel = editor.getModel()?.id !== model.id;
+
+      if (isSwitchingModel) {
         editor.setModel(model);
       }
 
-      // Update editor text if it's different
-      let newText = editorMode === 'code' ? code : mermaid;
+      let newText = isMermaidMode ? code : mermaid;
       if (typeof newText !== 'string') {
         newText = JSON.stringify(newText, null, 2);
       }
+
       if (newText !== currentText) {
-        editor.setScrollTop(0);
+        // isExternalLoad: comparing against THIS model's own last-known text
+        const isExternalLoad =
+          currentText === '' || Math.abs(newText.length - currentText.length) > 50;
         editor.setValue(newText);
-        currentText = newText;
+
+        if (isMermaidMode) {
+          currentMermaidText = newText;
+        } else {
+          currentJsonText = newText;
+        }
+
+        if (isExternalLoad) {
+          editor.setScrollTop(0);
+        } else if (!isSwitchingModel && viewState) {
+          editor.restoreViewState(viewState);
+        }
       }
 
-      // Display/clear errors
       monaco.editor.setModelMarkers(model, 'mermaid', errorMarkers);
     });
 
@@ -128,32 +191,39 @@
       editor?.dispose();
     };
   });
-
-  function handleInsertIcon(iconId: string) {
-    if (!editor) return;
-    const selection = editor.getSelection();
-    if (!selection) return;
-
-    editor.executeEdits('icon-picker', [
-      {
-        range: selection,
-        text: iconId,
-        forceMoveMarkers: true
-      }
-    ]);
-    editor.focus();
-  }
 </script>
 
-<div class="relative h-full w-full">
-  <!-- The Monaco Editor container -->
-  <div bind:this={divElement} id="editor" class="h-full w-full"></div>
+<div class="relative flex h-full w-full flex-col">
+  <!-- Monaco Editor -->
+  <div bind:this={divElement} id="editor" class="min-h-0 w-full flex-1"></div>
 
-  <!-- Floating UI over the editor -->
+  <!-- Status bar -->
+  <div
+    class="flex h-5 shrink-0 items-center gap-3 border-t bg-muted/40 px-3 text-[10px] text-muted-foreground select-none">
+    <span title="Cursor position">Ln {cursorLine}, Col {cursorColumn}</span>
+    <span class="opacity-40">|</span>
+    <span>Mermaid</span>
+    {#if wordWrap}
+      <span class="opacity-40">|</span>
+      <span>Word Wrap</span>
+    {/if}
+  </div>
+
+  <!-- Floating toolbar -->
   <div class="absolute top-4 right-4 z-10 flex gap-2">
     <div
       class="rounded-md border bg-background/95 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <IconPicker onInsert={handleInsertIcon} />
+      <div class="flex items-center gap-1 px-1">
+        <button
+          title="Toggle word wrap (Alt+Z)"
+          class="flex h-7 w-7 items-center justify-center rounded text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground {wordWrap
+            ? 'bg-accent text-accent-foreground'
+            : ''}"
+          onclick={toggleWordWrap}>
+          <WrapIcon class="size-4" />
+        </button>
+        <IconPicker />
+      </div>
     </div>
   </div>
 </div>

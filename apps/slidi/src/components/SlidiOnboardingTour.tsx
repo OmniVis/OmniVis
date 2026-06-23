@@ -273,10 +273,25 @@ export default function SlidiOnboardingTour() {
       left = window.innerWidth - tooltipWidth - padding;
     }
 
+    // If the highlighted element fills most of the screen (e.g. full-screen canvas),
+    // center the tooltip vertically instead of positioning relative to the element.
+    const elementFillsScreen = rect.height > window.innerHeight * 0.6;
+    if (elementFillsScreen) {
+      return {
+        position: "fixed",
+        top: "50%",
+        left: "50%",
+        transform: "translate(-50%, -50%)",
+        width: `${tooltipWidth}px`,
+        zIndex: 160,
+      };
+    }
+
     if (top + tooltipHeight > window.innerHeight - padding) {
       top = rect.top - tooltipHeight - padding;
     }
-    if (top < padding) top = padding;
+    // Keep tooltip below the header (~64px) to avoid overlap
+    if (top < 64) top = 64;
 
     return {
       position: "fixed",
@@ -291,7 +306,7 @@ export default function SlidiOnboardingTour() {
     <>
       {/* ── Welcome Toast Card ── */}
       {showWelcome && (
-        <div className="fixed bottom-6 right-6 z-[200] max-w-sm w-[calc(100vw-3rem)] rounded-2xl border border-slate-200/80 bg-white/95 backdrop-blur-md shadow-[0_20px_50px_rgba(15,23,42,0.12)] p-6 sm:p-7 flex flex-col gap-5 relative overflow-hidden animate-in slide-in-from-bottom-12 duration-700 ease-out">
+        <div className="fixed bottom-24 md:bottom-6 right-6 z-[200] max-w-sm w-[calc(100vw-3rem)] rounded-2xl border border-slate-200/80 bg-white/95 backdrop-blur-md shadow-[0_20px_50px_rgba(15,23,42,0.12)] p-6 sm:p-7 flex flex-col gap-5 relative overflow-hidden">
           <div className="absolute -top-10 -right-10 w-24 h-24 bg-violet-400/10 rounded-full blur-xl pointer-events-none" />
 
           <div className="flex items-start gap-4">

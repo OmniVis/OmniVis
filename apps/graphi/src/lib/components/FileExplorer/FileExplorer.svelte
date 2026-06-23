@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { get } from 'svelte/store';
   import { base } from '$app/paths';
   import {
     activeFileHandle,
@@ -7,7 +8,9 @@
     activeCloudFileId,
     currentGraphName,
     isAuthModalOpen,
-    lastSavedCode
+    lastSavedCode,
+    lastSavedAt,
+    saveStatus
   } from '$/util/fileSystem';
   import ConfirmDialog from '$/components/ConfirmDialog.svelte';
   import {
@@ -35,6 +38,8 @@
   import UploadIcon from '~icons/material-symbols/upload';
   import CloseIcon from '~icons/material-symbols/close';
   import SaveIcon from '~icons/material-symbols/save';
+  import DownloadIcon from '~icons/material-symbols/download';
+  import UploadCloudIcon from '~icons/material-symbols/cloud-upload';
 
   let activeTab = $state<'pc' | 'browser' | 'cloud'>('browser');
 
@@ -85,6 +90,36 @@
       toast.error('Failed to load cloud graphs');
     } finally {
       cloudLoading = false;
+    }
+  }
+
+  async function handlePushToCloud(id: string, name: string | null) {
+    if (!userId) {
+      isAuthModalOpen.set(true);
+      return;
+    }
+    try {
+      saveStatus.set('saving');
+      const packed = packFileContent($stateStore.code, $stateStore.mermaid);
+      const res = await fetch(`${base || ''}/api/graphs/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: packed, name, user_id: userId })
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const rawCode = $stateStore.code;
+      lastSavedCode.set(rawCode);
+      lastSavedAt.set(new Date());
+      saveStatus.set('success');
+      setTimeout(() => {
+        if (get(saveStatus) === 'success') saveStatus.set('saved');
+      }, 2000);
+      toast.success(`Cloud updated · "${name || 'Untitled'}"`);
+      await fetchCloud();
+    } catch (err) {
+      console.error('Failed to push to cloud:', err);
+      toast.error('Failed to update cloud graph');
+      saveStatus.set('unsaved');
     }
   }
 
@@ -167,7 +202,25 @@
 
   async function processSelectedFile(file: File) {
     try {
+      // 1. Size check (max 512KB to match server limit)
+      if (file.size > 512 * 1024) {
+        toast.error('File too large (max 512KB)');
+        return;
+      }
+
       const content = await file.text();
+
+      // 2. Basic XSS/HTML payload check
+      const lowerContent = content.toLowerCase();
+      if (
+        lowerContent.includes('<script') ||
+        lowerContent.includes('<html') ||
+        lowerContent.includes('javascript:')
+      ) {
+        toast.error('Potentially malicious content detected');
+        return;
+      }
+
       importedFile = {
         name: file.name.replace(/\.[^/.]+$/, ''), // Strip extension
         content
@@ -312,6 +365,21 @@
                     title="Delete">
                     <DeleteIcon class="size-4" />
                   </button>
+                  <button
+                    onclick={() => {
+                      const blob = new Blob([file.content], { type: 'text/plain;charset=utf-8' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `${file.name}.dia`;
+                      a.click();
+                      URL.revokeObjectURL(url);
+                      toast.success('Downloaded!');
+                    }}
+                    class="p-1 text-slate-400 transition-colors hover:text-slate-600"
+                    title="Download">
+                    <DownloadIcon class="size-4" />
+                  </button>
                 </div>
               </div>
             </div>
@@ -364,12 +432,47 @@
                 </div>
                 <div class="flex items-center justify-between p-3">
                   <span class="truncate text-sm font-medium">{entry.name || 'Untitled'}</span>
-                  <button
-                    onclick={() => guardedLoad(() => handleLoadCloudFile(entry.id))}
-                    class="p-1 text-slate-400 transition-colors hover:text-blue-600"
-                    title="Open">
-                    <PlayIcon class="size-4" />
-                  </button>
+                  <div class="flex items-center gap-1">
+                    <button
+                      onclick={() => guardedLoad(() => handleLoadCloudFile(entry.id))}
+                      class="p-1 text-slate-400 transition-colors hover:text-blue-600"
+                      title="Open">
+                      <PlayIcon class="size-4" />
+                    </button>
+                    {#if entry.id === $activeCloudFileId}
+                      <button
+                        onclick={() => handlePushToCloud(entry.id, entry.name)}
+                        class="p-1 text-slate-400 transition-colors hover:text-blue-600"
+                        title="Push current editor content to cloud">
+                        <UploadCloudIcon class="size-4" />
+                      </button>
+                    {/if}
+                    <button
+                      onclick={async () => {
+                        try {
+                          toast.info('Fetching file...');
+                          const res = await fetch(`${base || ''}/api/graphs/${entry.id}`);
+                          if (!res.ok) throw new Error('Failed to fetch');
+                          const data = await res.json();
+                          const blob = new Blob([data.code_content], {
+                            type: 'text/plain;charset=utf-8'
+                          });
+                          const url = URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = `${entry.name || 'Untitled'}.dia`;
+                          a.click();
+                          URL.revokeObjectURL(url);
+                          toast.success('Downloaded!');
+                        } catch {
+                          toast.error('Failed to download');
+                        }
+                      }}
+                      class="p-1 text-slate-400 transition-colors hover:text-slate-600"
+                      title="Download">
+                      <DownloadIcon class="size-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
             {/each}

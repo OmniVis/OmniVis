@@ -8,8 +8,8 @@ import crypto from "crypto";
 /** Resolve the convert.py script path — dev uses the source tree, prod uses the copied scripts/ dir. */
 async function resolveScriptPath(): Promise<string | null> {
   const candidates = [
-    path.join(/* turbopackIgnore: true */ process.cwd(), "src", "server", "converter", "convert.py"),
-    path.join(/* turbopackIgnore: true */ process.cwd(), "scripts", "convert.py"),
+    path.join(process.cwd(), "src/server/converter/convert.py"),
+    path.join(process.cwd(), "scripts/convert.py"),
   ];
   for (const p of candidates) {
     try {

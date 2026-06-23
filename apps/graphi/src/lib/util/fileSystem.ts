@@ -1,3 +1,4 @@
+import { base } from '$app/paths';
 import { toast } from 'svelte-sonner';
 import { get, writable } from 'svelte/store';
 import { getHandles, removeHandle, saveHandle } from './idb';
@@ -22,6 +23,7 @@ export const currentGraphName = writable<string>('Untitled Diagram');
 export type SaveStatus = 'saved' | 'saving' | 'unsaved' | 'blocked' | 'success';
 export const saveStatus = writable<SaveStatus>('saved');
 export const lastSavedCode = writable<string>('');
+export const lastSavedAt = writable<Date | null>(null);
 
 export async function openDirectory(): Promise<void> {
   if (!('showDirectoryPicker' in window)) {
@@ -290,6 +292,9 @@ export async function writeFile(fileHandle: FileSystemFileHandle, content: strin
     if (permission !== 'granted') {
       console.warn('Write permission not granted for:', fileHandle.name);
       saveStatus.set('blocked');
+      toast.error(
+        `Write access denied for "${fileHandle.name}". Re-open the file to re-authorize.`
+      );
       throw new Error('Permission denied');
     }
 
@@ -302,6 +307,7 @@ export async function writeFile(fileHandle: FileSystemFileHandle, content: strin
     const { unpackFileContent } = await import('./fileContent');
     const { code: rawCode } = unpackFileContent(content);
     lastSavedCode.set(rawCode);
+    lastSavedAt.set(new Date());
 
     saveStatus.set('success');
     setTimeout(() => {
@@ -320,7 +326,47 @@ export async function writeFile(fileHandle: FileSystemFileHandle, content: strin
 export async function saveActiveFile(content: string): Promise<boolean> {
   const handle = get(activeFileHandle);
   const virtualId = get(activeVirtualFileId);
+  const cloudId = get(activeCloudFileId);
 
+  // — Cloud branch —
+  if (cloudId) {
+    const userId = localStorage.getItem('graphi_user_id');
+    if (!userId) {
+      toast.error('Sign in to save to Cloud');
+      return false;
+    }
+    saveStatus.set('saving');
+    try {
+      const res = await fetch(`${base || ''}/api/graphs/${cloudId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code: content.trim(),
+          user_id: userId,
+          name: get(currentGraphName)
+        })
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const { unpackFileContent } = await import('./fileContent');
+      const { code: rawCode } = unpackFileContent(content.trim());
+      lastSavedCode.set(rawCode);
+      lastSavedAt.set(new Date());
+      saveStatus.set('success');
+      toast.success(`Saved to Cloud · "${get(currentGraphName)}"`);
+      setTimeout(() => {
+        if (get(saveStatus) === 'success') saveStatus.set('saved');
+      }, 2000);
+      return true;
+    } catch (err) {
+      console.error('Cloud save failed:', err);
+      saveStatus.set('unsaved');
+      toast.error('Failed to save to Cloud. Check your connection.');
+      return false;
+    }
+  }
+
+  // — Browser (IndexedDB) branch —
   if (virtualId) {
     const { siteFiles, updateVirtualItem } = await import('./siteWorkspace.svelte');
     const file = siteFiles.find((f) => f.id === virtualId);
@@ -328,30 +374,30 @@ export async function saveActiveFile(content: string): Promise<boolean> {
       saveStatus.set('saving');
       file.content = content;
       await updateVirtualItem(file);
-      console.log(`Successfully updated virtual file: ${file.name} (${virtualId})`);
 
       const { unpackFileContent } = await import('./fileContent');
       const { code: rawCode } = unpackFileContent(content);
       lastSavedCode.set(rawCode);
-
+      lastSavedAt.set(new Date());
       saveStatus.set('success');
+      toast.success(`Saved to Browser · "${file.name}"`);
       setTimeout(() => {
-        if (get(saveStatus) === 'success') {
-          saveStatus.set('saved');
-        }
+        if (get(saveStatus) === 'success') saveStatus.set('saved');
       }, 2000);
       return true;
     }
   }
 
+  // — Disk (File System API) branch —
   if (!handle) return false;
 
   try {
-    // requestPermission MUST be called from a user gesture (like a button click)
-    // @ts-expect-error - File System API types are experimental
+    // requestPermission must be called from a user gesture
+    // @ts-expect-error — File System API types are experimental
     const permission = await handle.requestPermission({ mode: 'readwrite' });
     if (permission === 'granted') {
       await writeFile(handle, content);
+      toast.success(`Saved as ${handle.name}`);
       return true;
     }
   } catch (error) {
@@ -377,13 +423,16 @@ export async function saveFile(content: string, suggestedName = 'diagram.dia'): 
     await writable.close();
 
     activeFileHandle.set(handle);
-    lastSavedCode.set(content);
+
+    const { unpackFileContent } = await import('./fileContent');
+    const { code: rawCode } = unpackFileContent(content);
+    lastSavedCode.set(rawCode);
+    lastSavedAt.set(new Date());
 
     saveStatus.set('success');
+    toast.success(`Saved as ${handle.name}`);
     setTimeout(() => {
-      if (get(saveStatus) === 'success') {
-        saveStatus.set('saved');
-      }
+      if (get(saveStatus) === 'success') saveStatus.set('saved');
     }, 2000);
 
     return true;
@@ -413,7 +462,7 @@ activeCloudFileId.subscribe((id) => {
   }
 });
 
-export async function restoreActiveGraph(base: string): Promise<void> {
+export async function restoreActiveGraph(basePath?: string): Promise<void> {
   const virtualId = localStorage.getItem(LAST_VIRTUAL_KEY);
   const cloudId = localStorage.getItem(LAST_CLOUD_KEY);
 
@@ -438,7 +487,7 @@ export async function restoreActiveGraph(base: string): Promise<void> {
     const { updateCodeStore } = await import('./state');
     const { unpackFileContent } = await import('./fileContent');
     try {
-      const res = await fetch(`${base || ''}/api/graphs/${cloudId}`);
+      const res = await fetch(`${basePath ?? base ?? ''}/api/graphs/${cloudId}`);
       if (!res.ok) {
         localStorage.removeItem(LAST_CLOUD_KEY);
         return;

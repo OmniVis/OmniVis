@@ -2,7 +2,13 @@
 
 All notable changes to Slidi will be documented in this file.
 
-## [Recent] - 2026-06-01
+## [Recent] - 2026-06-08
+
+### Fixed
+- **Onboarding Welcome Toast**: Moved the welcome card up on mobile (`bottom-24`) so it no longer hides behind the sticky bottom navigation bar; desktop positioning (`bottom-6`) is unchanged.
+- **Onboarding Tour Tooltip**: When the highlighted element fills the majority of the viewport (e.g. the full-screen canvas pane on step 0), the tooltip now centers itself in the middle of the screen instead of being clamped behind the header. Raised the minimum top offset from 16 px to 64 px to prevent overlap with the header on all steps.
+
+## [Previous] - 2026-06-01
 
 ### Added
 - **V4 Executive Engine**: Introduced the hyper-modern V4 engine featuring `BENTO-GRID` and `NARRATIVE-CHART` layouts. Integrated top-tier consulting principles (McKinsey/BCG) directly into the AI prompt to enforce "Action Titles" and the "60-Second Rule" (one message per slide).

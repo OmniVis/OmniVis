@@ -261,6 +261,52 @@ function SlidiEditorInner() {
     URL.revokeObjectURL(url);
   };
 
+  const handleImport = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".html";
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+
+      if (file.size > 5 * 1024 * 1024) {
+        alert("File is too large. Maximum size is 5MB.");
+        return;
+      }
+
+      try {
+        const content = await file.text();
+        
+        if (!content.includes("sl-export-mode") || !content.includes("// AI GENERATED CODE START")) {
+          alert("Invalid file. Only exported Slidi HTML files can be imported.");
+          return;
+        }
+
+        const codeStartMatch = content.match(/\/\/ AI GENERATED CODE START\s*([\s\S]*?)\s*\/\/ AI GENERATED CODE END/);
+        if (!codeStartMatch || !codeStartMatch[1]) {
+          alert("Could not find presentation code in the file.");
+          return;
+        }
+
+        let code = codeStartMatch[1].trim();
+
+        if (code.startsWith("const slideData = {")) {
+          const jsonMatch = code.match(/const slideData = (\{[\s\S]*?\});/);
+          if (jsonMatch && jsonMatch[1]) {
+            code = jsonMatch[1];
+          }
+        }
+
+        useSlidiStore.getState().pushVersion(code);
+        useSlidiStore.getState().setPresentationName(file.name.replace(/\.[^/.]+$/, ""));
+        alert("Presentation imported successfully.");
+      } catch (err) {
+        alert("Failed to read file.");
+      }
+    };
+    input.click();
+  };
+
   const { conflict, queueVersion, replayQueue } = useOfflineQueue();
 
   // When offline: queue version pushes instead of letting them be lost
@@ -381,6 +427,7 @@ function SlidiEditorInner() {
         showGallery={showGallery}
         onToggleGallery={() => setShowGallery(!showGallery)}
         onDownload={handleDownload}
+        onImport={handleImport}
         showHistory={showHistory}
         onToggleHistory={() => setShowHistory((v) => !v)}
         presentationName={presentationName}

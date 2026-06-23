@@ -37,6 +37,7 @@ export interface State {
   zoom?: number;
   loader?: LoaderConfig;
   isAdvancedMode?: boolean;
+  visualMode?: boolean;       // ← ADD THIS
   exportBackground?: string;
   performanceMode?: boolean;
 }

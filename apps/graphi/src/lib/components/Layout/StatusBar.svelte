@@ -5,10 +5,10 @@
 <script lang="ts">
   import Privacy from '$/components/Privacy.svelte';
   import ThemeIcon from '$/components/ThemeIcon.svelte';
-  import { Button } from '$/components/ui/button';
   import { Toggle } from '$/components/ui/toggle';
   import { TID } from '$/constants';
   import { defaultState, inputStateStore } from '$/util/state';
+  import { activeCloudFileId, activeFileHandle, activeVirtualFileId } from '$/util/fileSystem';
   import { mode, setMode } from 'mode-watcher';
   import RoughIcon from '~icons/material-symbols/draw';
   import BackgroundIcon from '~icons/material-symbols/grid-4x4';
@@ -17,6 +17,16 @@
     // Handle cases where old states were saved without grid option
     $inputStateStore.grid = defaultState.grid;
   }
+
+  const fileLocationBadge = $derived(
+    $activeCloudFileId
+      ? { color: 'bg-blue-400', label: 'Cloud' }
+      : $activeVirtualFileId
+        ? { color: 'bg-violet-400', label: 'Browser' }
+        : $activeFileHandle
+          ? { color: 'bg-green-400', label: 'Disk' }
+          : null
+  );
 </script>
 
 <footer
@@ -44,12 +54,15 @@
       Grid
     </label>
 
-    <div class="h-3 w-[1px] bg-white/30"></div>
-
-    <div class="flex items-center gap-1.5 opacity-90 transition-all">
-      <div class="size-1.5 animate-pulse rounded-full bg-green-400"></div>
-      Auto-Sync Active
-    </div>
+    {#if fileLocationBadge}
+      <div class="h-3 w-[1px] bg-white/30"></div>
+      <div
+        class="flex items-center gap-1.5 opacity-90"
+        title="File saved to {fileLocationBadge.label}">
+        <div aria-hidden="true" class="size-1.5 rounded-full {fileLocationBadge.color}"></div>
+        {fileLocationBadge.label}
+      </div>
+    {/if}
   </div>
 
   <div class="absolute left-1/2 hidden -translate-x-1/2 font-medium opacity-90 sm:block">
